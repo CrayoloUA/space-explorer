@@ -3,8 +3,8 @@ import { useMarsRover } from '../hooks/useNASA'
 
 export default function MarsGallery({ language = 'es' }) {
   const [page, setPage] = useState(1)
-  const [earthDate, setEarthDate] = useState('2021-06-03')
-  const { data, loading, error } = useMarsRover(page, earthDate)
+  const [earthDate, setEarthDate] = useState('2022-01-01')
+  const { data, loading, error, resolvedDate } = useMarsRover(page, earthDate)
 
   const t = {
     es: {
@@ -13,11 +13,13 @@ export default function MarsGallery({ language = 'es' }) {
       page: 'Página',
       prev: '← Anterior',
       next: 'Siguiente →',
-      error: 'Error cargando fotos de Marte',
+      error: 'No se encontraron fotos para ninguna fecha disponible',
       date: 'Fecha terrestre',
       photos: 'fotos',
       camera: 'Cámara',
-      noResults: 'No hay fotos para esa fecha. Prueba otra.'
+      noResults: 'Sin fotos para esa fecha. Probando fechas alternativas...',
+      fallbackNote: 'Mostrando fotos del',
+      searching: 'Buscando fotos...',
     },
     en: {
       title: '🔴 Mars — Curiosity Rover',
@@ -25,17 +27,19 @@ export default function MarsGallery({ language = 'es' }) {
       page: 'Page',
       prev: '← Previous',
       next: 'Next →',
-      error: 'Error loading Mars photos',
+      error: 'No photos found for any available date',
       date: 'Earth date',
       photos: 'photos',
       camera: 'Camera',
-      noResults: 'No photos for that date. Try another one.'
+      noResults: 'No photos for that date. Trying fallback dates...',
+      fallbackNote: 'Showing photos from',
+      searching: 'Searching photos...',
     }
   }[language]
 
   if (error) return (
     <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-error)' }}>
-      🛸 {t.error}: {error}
+      🛸 {t.error}
     </div>
   )
 
@@ -50,12 +54,30 @@ export default function MarsGallery({ language = 'es' }) {
         </div>
         <div>
           <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-2)' }}>{t.date}</label>
-          <input type="date" value={earthDate} onChange={(e) => { setEarthDate(e.target.value); setPage(1) }} style={{
-            padding: 'var(--space-2) var(--space-3)', background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)'
-          }} />
+          <input
+            type="date"
+            value={earthDate}
+            min="2012-08-06"
+            max="2024-12-31"
+            onChange={(e) => { setEarthDate(e.target.value); setPage(1) }}
+            style={{
+              padding: 'var(--space-2) var(--space-3)', background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)'
+            }}
+          />
         </div>
       </div>
+
+      {/* Aviso si se usó una fecha fallback distinta a la elegida */}
+      {!loading && resolvedDate && resolvedDate !== earthDate && (
+        <div style={{
+          marginBottom: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)',
+          background: 'rgba(99,179,237,0.06)', border: '1px solid rgba(99,179,237,0.2)',
+          borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', color: 'var(--color-primary)'
+        }}>
+          ℹ️ {t.fallbackNote} <strong>{resolvedDate}</strong>
+        </div>
+      )}
 
       {!loading && data.length > 0 && (
         <div style={{ marginBottom: 'var(--space-4)', display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -65,11 +87,14 @@ export default function MarsGallery({ language = 'es' }) {
       )}
 
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 'var(--space-3)' }}>
-          {Array.from({ length: 8 }, (_, i) => (
-            <div key={i} className="skeleton" style={{ aspectRatio: '1', borderRadius: 'var(--radius-lg)' }} />
-          ))}
-        </div>
+        <>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>⏳ {t.searching}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 'var(--space-3)' }}>
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="skeleton" style={{ aspectRatio: '1', borderRadius: 'var(--radius-lg)' }} />
+            ))}
+          </div>
+        </>
       ) : data.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-text-muted)' }}>{t.noResults}</div>
       ) : (
@@ -97,8 +122,7 @@ export default function MarsGallery({ language = 'es' }) {
 
       <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-6)', justifyContent: 'center' }}>
         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{
-          padding: 'var(--space-2) var(--space-5)',
-          borderRadius: 'var(--radius-full)',
+          padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)',
           border: '1px solid var(--color-border)',
           background: page === 1 ? 'transparent' : 'var(--color-surface-2)',
           color: page === 1 ? 'var(--color-text-faint)' : 'var(--color-text)',
@@ -108,8 +132,7 @@ export default function MarsGallery({ language = 'es' }) {
           {t.page} {page}
         </span>
         <button onClick={() => setPage(p => p + 1)} style={{
-          padding: 'var(--space-2) var(--space-5)',
-          borderRadius: 'var(--radius-full)',
+          padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)',
           border: '1px solid rgba(99,179,237,0.3)',
           background: 'rgba(99,179,237,0.08)',
           color: 'var(--color-primary)',
