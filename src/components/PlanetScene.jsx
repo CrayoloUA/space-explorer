@@ -35,61 +35,37 @@ export default function PlanetScene() {
 
     const makeEarthTex = () => {
       const c = document.createElement('canvas')
-      c.width = 512
-      c.height = 256
+      c.width = 512; c.height = 256
       const ctx = c.getContext('2d')
-      ctx.fillStyle = '#1a4a8a'
-      ctx.fillRect(0, 0, 512, 256)
+      ctx.fillStyle = '#1a4a8a'; ctx.fillRect(0, 0, 512, 256)
       ctx.fillStyle = '#2d7a3a'
-      const continents = [
-        [130, 120, 60, 45, 0.3], [250, 100, 80, 55, -0.2], [350, 130, 55, 40, 0.5],
-        [400, 170, 45, 35, 0.1], [180, 165, 35, 28, -0.3]
-      ]
-      for (let i = 0; i < continents.length; i++) {
-        const co = continents[i]
-        ctx.beginPath()
-        ctx.ellipse(co[0], co[1], co[2], co[3], co[4], 0, Math.PI * 2)
-        ctx.fill()
-      }
-      ctx.fillStyle = '#c8a860'
-      ctx.beginPath()
-      ctx.ellipse(260, 108, 30, 20, 0, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = '#e8f4ff'
-      ctx.fillRect(0, 0, 512, 20)
-      ctx.fillRect(0, 236, 512, 20)
+      const continents = [[130,120,60,45,0.3],[250,100,80,55,-0.2],[350,130,55,40,0.5],[400,170,45,35,0.1],[180,165,35,28,-0.3]]
+      for (const co of continents) { ctx.beginPath(); ctx.ellipse(co[0],co[1],co[2],co[3],co[4],0,Math.PI*2); ctx.fill() }
+      ctx.fillStyle = '#c8a860'; ctx.beginPath(); ctx.ellipse(260,108,30,20,0,0,Math.PI*2); ctx.fill()
+      ctx.fillStyle = '#e8f4ff'; ctx.fillRect(0,0,512,20); ctx.fillRect(0,236,512,20)
       return new THREE.CanvasTexture(c)
     }
 
     const makeCloudTex = () => {
       const c = document.createElement('canvas')
-      c.width = 512
-      c.height = 256
+      c.width = 512; c.height = 256
       const ctx = c.getContext('2d')
       ctx.clearRect(0, 0, 512, 256)
       for (let i = 0; i < 80; i++) {
-        const alpha = 0.05 + Math.random() * 0.15
-        ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')'
-        ctx.beginPath()
-        ctx.ellipse(Math.random() * 512, Math.random() * 256, 20 + Math.random() * 40, 8 + Math.random() * 15, Math.random() * Math.PI, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.15})`
+        ctx.beginPath(); ctx.ellipse(Math.random()*512, Math.random()*256, 20+Math.random()*40, 8+Math.random()*15, Math.random()*Math.PI, 0, Math.PI*2); ctx.fill()
       }
       return new THREE.CanvasTexture(c)
     }
 
     const makeMoonTex = () => {
       const c = document.createElement('canvas')
-      c.width = 256
-      c.height = 128
+      c.width = 256; c.height = 128
       const ctx = c.getContext('2d')
-      ctx.fillStyle = '#9a9a9a'
-      ctx.fillRect(0, 0, 256, 128)
+      ctx.fillStyle = '#9a9a9a'; ctx.fillRect(0, 0, 256, 128)
       for (let i = 0; i < 40; i++) {
-        const lightness = 30 + Math.random() * 30
-        ctx.fillStyle = 'hsl(0,0%,' + lightness + '%)'
-        ctx.beginPath()
-        ctx.arc(Math.random() * 256, Math.random() * 128, 2 + Math.random() * 7, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.fillStyle = `hsl(0,0%,${30+Math.random()*30}%)`
+        ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*128, 2+Math.random()*7, 0, Math.PI*2); ctx.fill()
       }
       return new THREE.CanvasTexture(c)
     }
@@ -121,8 +97,7 @@ export default function PlanetScene() {
     )
     scene.add(moon)
 
-    let mouseX = 0
-    let mouseY = 0
+    let mouseX = 0, mouseY = 0
     const onMouseMove = (e) => {
       mouseX = (e.clientX / window.innerWidth - 0.5) * 2
       mouseY = (e.clientY / window.innerHeight - 0.5) * 2
@@ -130,23 +105,19 @@ export default function PlanetScene() {
     window.addEventListener('mousemove', onMouseMove)
 
     const onResize = () => {
-      const nw = mount.clientWidth
-      const nh = mount.clientHeight
+      const nw = mount.clientWidth, nh = mount.clientHeight
       camera.aspect = nw / nh
       camera.updateProjectionMatrix()
       renderer.setSize(nw, nh)
     }
     window.addEventListener('resize', onResize)
 
+    const startTime = performance.now()
     let animId
-    const timer = new THREE.Timer()
-    timer.connect(document)
-    timer.start()
 
     const animate = () => {
       animId = requestAnimationFrame(animate)
-      timer.update()
-      const t = timer.getElapsed()
+      const t = (performance.now() - startTime) / 1000
       earth.rotation.y = t * 0.07
       clouds.rotation.y = t * 0.09
       moon.position.set(Math.cos(t * 0.18) * 3.6, Math.sin(t * 0.072) * 0.4, Math.sin(t * 0.18) * 3.6)
