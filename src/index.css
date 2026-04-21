@@ -164,7 +164,6 @@ ul { list-style: none; }
   color: var(--color-text-muted);
 }
 
-/* ── Skeleton ── */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -176,15 +175,11 @@ ul { list-style: none; }
   border-radius: var(--radius-md);
 }
 
-/* ── Animations ── */
-
-/* FIXED: pulseGlow only animates opacity — no transform, no trembling */
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
 
-/* Scroll line drops smoothly */
 @keyframes scrollDrop {
   0% { transform: scaleY(0); transform-origin: top; opacity: 0; }
   30% { opacity: 1; }
@@ -193,23 +188,23 @@ ul { list-style: none; }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes scrollReveal {
-  from { opacity: 0; transform: translateY(32px); }
-  to   { opacity: 1; transform: translateY(0); }
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .fade-up {
   animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) both;
 }
 
-.reveal {
-  animation: scrollReveal 0.65s cubic-bezier(0.16,1,0.3,1) both;
-}
-
-/* Pill hover */
 .pill-tag {
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
@@ -227,7 +222,6 @@ ul { list-style: none; }
   background: rgba(126,208,255,0.06);
 }
 
-/* Tab button */
 .tab-btn {
   padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-full);
@@ -252,7 +246,7 @@ ul { list-style: none; }
   border-color: var(--color-border-strong);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .section-shell { padding: var(--space-12) var(--space-4); }
 }
 

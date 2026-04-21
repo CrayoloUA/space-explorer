@@ -4,23 +4,31 @@ import axios from 'axios'
 const API_KEY = 'dZevrbNxRZCgtGvFlUFN6tkPFbVl9FHgTUgLejME'
 const BASE_URL = 'https://api.nasa.gov'
 const CACHE_TTL = 1000 * 60 * 60
-
-// Soles marcianos confirmados con fotos (1 sol = 1 día marciano)
-// Sol 0 = 6 agosto 2012 (aterrizaje del Curiosity)
 const FALLBACK_SOLS = [1000, 500, 1500, 2000, 2500, 3000, 3500, 100, 200]
 
-function getCache(key) {
+function safeStorage() {
   try {
-    const raw = localStorage.getItem(key)
+    if (typeof window !== 'undefined' && window.localStorage) return window.localStorage
+  } catch {}
+  return null
+}
+
+function getCache(key) {
+  const storage = safeStorage()
+  if (!storage) return null
+  try {
+    const raw = storage.getItem(key)
     if (!raw) return null
     const { data, ts } = JSON.parse(raw)
-    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(key); return null }
+    if (Date.now() - ts > CACHE_TTL) { storage.removeItem(key); return null }
     return data
   } catch { return null }
 }
 
 function setCache(key, data) {
-  try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })) } catch {}
+  const storage = safeStorage()
+  if (!storage) return
+  try { storage.setItem(key, JSON.stringify({ data, ts: Date.now() })) } catch {}
 }
 
 export function useAPODGallery(count = 9) {
@@ -85,7 +93,7 @@ export function useMarsRover(page = 1, sol = 1000) {
             if (!cancelled) { setData(photos); setResolvedSol(s); setLoading(false) }
             return
           }
-        } catch { /* continúa con el siguiente sol */ }
+        } catch {}
       }
 
       if (!cancelled) { setData([]); setError('No se encontraron fotos'); setLoading(false) }
@@ -96,4 +104,46 @@ export function useMarsRover(page = 1, sol = 1000) {
   }, [page, sol])
 
   return { data, loading, error, resolvedSol }
+}
+
+export function useNeoFeed() {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchNeo = useCallback(async () => {
+    const cacheKey = 'neo_feed_today'
+    const cached = getCache(cacheKey)
+    if (cached) { setData(cached); setLoading(false); return }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const res = await axios.get(`${BASE_URL}/neo/rest/v1/feed`, {
+        params: { api_key: API_KEY, start_date: today, end_date: today }
+      })
+      const items = res.data.near_earth_objects?.[today] || []
+      const normalized = items.slice(0, 6).map(item => ({
+        id: item.id,
+        name: item.name,
+        hazardous: item.is_potentially_hazardous_asteroid,
+        magnitude: item.absolute_magnitude_h,
+        diameterMin: item.estimated_diameter.kilometers.estimated_diameter_min,
+        diameterMax: item.estimated_diameter.kilometers.estimated_diameter_max,
+        velocity: item.close_approach_data?.[0]?.relative_velocity?.kilometers_per_hour,
+        missDistance: item.close_approach_data?.[0]?.miss_distance?.kilometers,
+      }))
+      setCache(cacheKey, normalized)
+      setData(normalized)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchNeo() }, [fetchNeo])
+  return { data, loading, error, refetch: fetchNeo }
 }
