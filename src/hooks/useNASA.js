@@ -5,16 +5,9 @@ const API_KEY = 'dZevrbNxRZCgtGvFlUFN6tkPFbVl9FHgTUgLejME'
 const BASE_URL = 'https://api.nasa.gov'
 const CACHE_TTL = 1000 * 60 * 60
 
-// Fechas confirmadas con fotos disponibles para usar como fallback
-const FALLBACK_DATES = [
-  '2022-01-01',
-  '2021-09-15',
-  '2021-03-10',
-  '2020-10-05',
-  '2020-03-01',
-  '2019-06-20',
-  '2018-11-15',
-]
+// Soles marcianos confirmados con fotos (1 sol = 1 día marciano)
+// Sol 0 = 6 agosto 2012 (aterrizaje del Curiosity)
+const FALLBACK_SOLS = [1000, 500, 1500, 2000, 2500, 3000, 3500, 100, 200]
 
 function getCache(key) {
   try {
@@ -56,18 +49,18 @@ export function useAPODGallery(count = 9) {
   return { data, loading, error, refetch: fetchGallery }
 }
 
-async function fetchMarsPhotos(earthDate, page) {
+async function fetchMarsBySol(sol, page) {
   const res = await axios.get(`${BASE_URL}/mars-photos/api/v1/rovers/curiosity/photos`, {
-    params: { api_key: API_KEY, earth_date: earthDate, page }
+    params: { api_key: API_KEY, sol, page }
   })
   return res.data.photos
 }
 
-export function useMarsRover(page = 1, earthDate = '2022-01-01') {
+export function useMarsRover(page = 1, sol = 1000) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [resolvedDate, setResolvedDate] = useState(earthDate)
+  const [resolvedSol, setResolvedSol] = useState(sol)
 
   useEffect(() => {
     let cancelled = false
@@ -76,35 +69,31 @@ export function useMarsRover(page = 1, earthDate = '2022-01-01') {
       setLoading(true)
       setError(null)
 
-      // Intentar la fecha elegida primero, luego los fallbacks
-      const datesToTry = [earthDate, ...FALLBACK_DATES.filter(d => d !== earthDate)]
+      const solsToTry = [sol, ...FALLBACK_SOLS.filter(s => s !== sol)]
 
-      for (const date of datesToTry) {
-        const cacheKey = `mars_${date}_p${page}`
+      for (const s of solsToTry) {
+        const cacheKey = `mars_sol${s}_p${page}`
         const cached = getCache(cacheKey)
         if (cached && cached.length > 0) {
-          if (!cancelled) { setData(cached); setResolvedDate(date); setLoading(false) }
+          if (!cancelled) { setData(cached); setResolvedSol(s); setLoading(false) }
           return
         }
         try {
-          const photos = await fetchMarsPhotos(date, page)
+          const photos = await fetchMarsBySol(s, page)
           if (photos && photos.length > 0) {
             setCache(cacheKey, photos)
-            if (!cancelled) { setData(photos); setResolvedDate(date); setLoading(false) }
+            if (!cancelled) { setData(photos); setResolvedSol(s); setLoading(false) }
             return
           }
-        } catch {
-          // 404 o error -> intenta la siguiente fecha
-        }
+        } catch { /* continúa con el siguiente sol */ }
       }
 
-      // Si ninguna fecha funcionó
       if (!cancelled) { setData([]); setError('No se encontraron fotos'); setLoading(false) }
     }
 
     load()
     return () => { cancelled = true }
-  }, [page, earthDate])
+  }, [page, sol])
 
-  return { data, loading, error, resolvedDate }
+  return { data, loading, error, resolvedSol }
 }
