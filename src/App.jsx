@@ -24,21 +24,24 @@ function GallerySkeletons() {
 
 function FavoritesSection({ language, favorites, onOpen, toggleFavorite }) {
   const t = {
-    es: { title: 'Tus favoritos', subtitle: 'Las imágenes que guardaste para volver a ver después.', empty: 'Aún no has guardado favoritos.' },
-    en: { title: 'Your favorites', subtitle: 'Images you saved to revisit later.', empty: 'You have no favorites yet.' },
+    es: { title: 'Tus favoritos', subtitle: 'Las imágenes que guardaste para volver a ver después.', empty: 'Aún no has guardado favoritos. Marca una imagen con ⭐ para empezar.' },
+    en: { title: 'Your favorites', subtitle: 'Images you saved to revisit later.', empty: 'No favorites yet. Tap ⭐ on any image to save it.' },
   }[language]
 
   return (
-    <section className="section-shell" style={{ paddingTop: 0 }}>
+    <section className="section-shell reveal" style={{ paddingTop: 0 }}>
       <div style={{ marginBottom: 'var(--space-8)' }}>
         <h2 className="section-title" style={{ marginBottom: 'var(--space-2)' }}>{t.title}</h2>
         <p className="section-subtitle">{t.subtitle}</p>
       </div>
       {favorites.length === 0 ? (
-        <div className="glass-panel" style={{ padding: 'var(--space-8)', borderRadius: 'var(--radius-xl)', textAlign: 'center', color: 'var(--color-text-muted)' }}>{t.empty}</div>
+        <div className="glass-panel" style={{ padding: 'var(--space-10)', borderRadius: 'var(--radius-xl)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          <div style={{ fontSize: '2.4rem', marginBottom: 'var(--space-3)' }}>⭐</div>
+          <p>{t.empty}</p>
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 'var(--space-6)' }}>
-          {favorites.slice(0, 3).map(item => (
+          {favorites.slice(0, 6).map(item => (
             <APODCard
               key={item.date}
               item={item}
@@ -79,14 +82,14 @@ function InsightsStrip({ language, favoritesCount, items }) {
   }[language]
 
   const metrics = [
-    { label: t.favorites, value: favoritesCount },
-    { label: t.images, value: images },
-    { label: t.videos, value: videos },
-    { label: t.latest, value: latest },
+    { label: t.favorites, value: favoritesCount, accent: 'var(--color-star)' },
+    { label: t.images, value: images, accent: 'var(--color-primary)' },
+    { label: t.videos, value: videos, accent: 'var(--color-nebula)' },
+    { label: t.latest, value: latest, accent: 'var(--color-success)' },
   ]
 
   return (
-    <section className="section-shell" style={{ paddingTop: 0 }}>
+    <section className="section-shell reveal" style={{ paddingTop: 0 }}>
       <div style={{ marginBottom: 'var(--space-8)' }}>
         <h2 className="section-title" style={{ marginBottom: 'var(--space-2)' }}>{t.title}</h2>
         <p className="section-subtitle">{t.subtitle}</p>
@@ -94,7 +97,7 @@ function InsightsStrip({ language, favoritesCount, items }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)' }}>
         {metrics.map(metric => (
           <div key={metric.label} className="metric-card glass-panel">
-            <div className="metric-value">{metric.value}</div>
+            <div className="metric-value" style={{ color: metric.accent }}>{metric.value}</div>
             <div className="metric-label">{metric.label}</div>
           </div>
         ))}
@@ -153,12 +156,13 @@ function APODSection({ language, favorites, toggleFavorite }) {
   return (
     <>
       <section className="section-shell">
-        <div className="glass-panel float-soft" style={{ borderRadius: 'calc(var(--radius-xl) + 8px)', padding: 'var(--space-8)', marginBottom: 'var(--space-8)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 10% 20%, rgba(126,208,255,0.14), transparent 25%), radial-gradient(circle at 80% 0%, rgba(211,146,255,0.14), transparent 25%)' }} />
+        {/* Hero card — sin float-soft para evitar el temblor */}
+        <div className="glass-panel-hover" style={{ borderRadius: 'calc(var(--radius-xl) + 8px)', padding: 'var(--space-8)', marginBottom: 'var(--space-8)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 10% 20%, rgba(126,208,255,0.13), transparent 25%), radial-gradient(circle at 80% 0%, rgba(211,146,255,0.13), transparent 25%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 'var(--space-6)' }}>
             <div>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-display)' }}>{t.badge}</p>
-              <h2 className="section-title" style={{ marginBottom: 'var(--space-3)', background: 'linear-gradient(90deg, var(--color-primary), var(--color-nebula))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.title}</h2>
+              <h2 className="section-title" style={{ marginBottom: 'var(--space-3)', background: 'linear-gradient(90deg, var(--color-primary), var(--color-nebula))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{t.title}</h2>
               <p className="section-subtitle">{t.subtitle}</p>
             </div>
             <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
@@ -168,21 +172,32 @@ function APODSection({ language, favorites, toggleFavorite }) {
           </div>
         </div>
 
+        {/* Toolbar */}
         <div style={{ marginBottom: 'var(--space-8)', display: 'flex', gap: 'var(--space-4)', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ color: 'var(--color-star)', fontSize: 'var(--text-sm)' }}>⭐ {favorites.length} {t.favorites}</span>
-            <button onClick={refetch} className="glass-panel" style={{ padding: 'var(--space-3) var(--space-5)', borderRadius: 'var(--radius-full)', color: 'var(--color-primary)', fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>{t.refresh}</button>
+            <button onClick={refetch} className="tab-btn" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>{t.refresh}</button>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             {['all', 'images', 'videos'].map(key => (
-              <button key={key} onClick={() => setFilter(key)} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', color: filter === key ? 'var(--color-primary)' : 'var(--color-text-muted)', borderColor: filter === key ? 'var(--color-border-strong)' : 'var(--color-border)' }}>{t[key]}</button>
+              <button key={key} onClick={() => setFilter(key)} className={`tab-btn${filter === key ? ' active' : ''}`}>{t[key]}</button>
             ))}
           </div>
         </div>
 
+        {/* Search */}
         <div style={{ marginBottom: 'var(--space-8)', position: 'relative', maxWidth: 520 }}>
           <span style={{ position: 'absolute', left: 'var(--space-4)', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-faint)', pointerEvents: 'none' }}>🔍</span>
-          <input type="search" placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} className="glass-panel" style={{ width: '100%', padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)', borderRadius: 'var(--radius-full)', color: 'var(--color-text)', fontSize: 'var(--text-sm)', outline: 'none' }} />
+          <input
+            type="search"
+            placeholder={t.search}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="glass-panel"
+            style={{ width: '100%', padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)', borderRadius: 'var(--radius-full)', color: 'var(--color-text)', fontSize: 'var(--text-sm)', outline: 'none', transition: 'border-color var(--transition), box-shadow var(--transition)' }}
+            onFocus={e => { e.target.style.borderColor = 'var(--color-border-strong)'; e.target.style.boxShadow = '0 0 0 3px rgba(126,208,255,0.1)'; }}
+            onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; }}
+          />
         </div>
 
         {error && (
@@ -278,24 +293,25 @@ export default function App() {
           <p className="fade-up" style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)', maxWidth: '44ch', margin: '0 auto var(--space-8)', lineHeight: 1.7 }}>{t.hero}</p>
           <div className="fade-up" style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-8)' }}>
             {[t.pill1, t.pill2, t.pill3].map(pill => (
-              <span key={pill} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{pill}</span>
+              <span key={pill} className="pill-tag">{pill}</span>
             ))}
           </div>
-          <a className="fade-up glass-panel" href="#content" style={{ padding: 'var(--space-4) var(--space-8)', borderRadius: 'var(--radius-full)', background: 'linear-gradient(135deg, rgba(126,208,255,0.18), rgba(211,146,255,0.16))', color: 'var(--color-text)', fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'inline-block', boxShadow: 'var(--shadow-glow)' }}>{t.cta}</a>
+          <a className="fade-up tab-btn active" href="#content" style={{ padding: 'var(--space-4) var(--space-8)', background: 'linear-gradient(135deg, rgba(126,208,255,0.18), rgba(211,146,255,0.16))', color: 'var(--color-text)', fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'inline-block', boxShadow: 'var(--shadow-glow)' }}>{t.cta}</a>
         </div>
 
-        <div style={{ position: 'absolute', bottom: 'var(--space-8)', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-faint)', fontSize: 'var(--text-xs)', letterSpacing: '0.15em', animation: 'pulseGlow 2.5s ease-in-out infinite' }}>
-          <span>{t.scroll}</span>
-          <div style={{ width: 1, height: 56, background: 'linear-gradient(var(--color-primary), transparent)', opacity: 0.6 }} />
+        {/* Scroll indicator — FIXED: solo opacity en pulseGlow, línea con scrollDrop */}
+        <div style={{ position: 'absolute', bottom: 'var(--space-8)', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <span style={{ color: 'var(--color-text-faint)', fontSize: 'var(--text-xs)', letterSpacing: '0.2em', animation: 'pulseGlow 2.5s ease-in-out infinite' }}>{t.scroll}</span>
+          <div style={{ width: 1, height: 52, background: 'linear-gradient(var(--color-primary), transparent)', animation: 'scrollDrop 2.5s ease-in-out infinite' }} />
         </div>
       </header>
 
       <nav id="content" className="glass-panel" style={{ position: 'sticky', top: 0, zIndex: 50, margin: '0 var(--space-4)', borderRadius: '0 0 var(--radius-xl) var(--radius-xl)', padding: 'var(--space-3) var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--color-primary)', letterSpacing: '0.1em' }}>🚀 SPACE EXPLORER</span>
         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => setLanguage(l => l === 'es' ? 'en' : 'es')} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', color: 'var(--color-text)' }}>{language.toUpperCase()}</button>
+          <button onClick={() => setLanguage(l => l === 'es' ? 'en' : 'es')} className="tab-btn" style={{ minWidth: 52 }}>{language.toUpperCase()}</button>
           {[{ id: 'apod', label: t.apod }, { id: 'mars', label: t.mars }].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)', color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)', borderColor: activeTab === tab.id ? 'var(--color-border-strong)' : 'var(--color-border)' }}>{tab.label}</button>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}>{tab.label}</button>
           ))}
         </div>
       </nav>
