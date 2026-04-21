@@ -43,8 +43,6 @@ function APODSection() {
 
   return (
     <section style={{ padding: 'var(--space-16) var(--space-8)', maxWidth: 1200, margin: '0 auto' }}>
-
-      {/* Header sección */}
       <div style={{
         marginBottom: 'var(--space-10)',
         display: 'flex', gap: 'var(--space-4)',
@@ -86,7 +84,6 @@ function APODSection() {
         >🔄 Nueva selección</button>
       </div>
 
-      {/* Buscador */}
       <div style={{ marginBottom: 'var(--space-8)', position: 'relative', maxWidth: 480 }}>
         <span style={{
           position: 'absolute', left: 'var(--space-4)', top: '50%',
@@ -113,12 +110,8 @@ function APODSection() {
         />
       </div>
 
-      {/* Estado de error */}
       {error && (
-        <div style={{
-          textAlign: 'center', padding: 'var(--space-16)',
-          color: 'var(--color-text-muted)'
-        }}>
+        <div style={{ textAlign: 'center', padding: 'var(--space-16)', color: 'var(--color-text-muted)' }}>
           <div style={{ fontSize: '3.5rem', marginBottom: 'var(--space-4)' }}>🛸</div>
           <h3 style={{ color: 'var(--color-error)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-display)' }}>Señal perdida</h3>
           <p style={{ marginBottom: 'var(--space-6)', fontSize: 'var(--text-sm)', maxWidth: '36ch', margin: '0 auto var(--space-6)' }}>{error}</p>
@@ -133,7 +126,6 @@ function APODSection() {
         </div>
       )}
 
-      {/* Galería */}
       {loading ? <GallerySkeletons /> : (
         <>
           {filtered.length === 0 ? (
@@ -167,85 +159,53 @@ export default function App() {
 
   return (
     <div>
-
-      {/* ===== HERO con planeta 3D ===== */}
+      {/* HERO */}
       <header style={{
-        position: 'relative',
-        height: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        position: 'relative', height: '100dvh',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
       }}>
-
-        {/* Canvas Three.js de fondo */}
         <div style={{ position: 'absolute', inset: 0 }}>
           <Suspense fallback={
-            <div style={{
-              width: '100%', height: '100%',
-              background: 'radial-gradient(ellipse at center, #0f1422 0%, #050810 70%)'
-            }} />
+            <div style={{ width: '100%', height: '100%', background: 'radial-gradient(ellipse at center, #0f1422 0%, #050810 70%)' }} />
           }>
             <PlanetScene />
           </Suspense>
         </div>
 
-        {/* Overlay de gradiente para mejorar legibilidad del texto */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at center bottom, rgba(5,8,16,0.6) 0%, transparent 60%), linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%)'
+          background: 'radial-gradient(ellipse at center bottom, rgba(5,8,16,0.5) 0%, transparent 60%), linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%)'
         }} />
 
-        {/* Contenido del Hero */}
         <div style={{ position: 'relative', textAlign: 'center', padding: 'var(--space-4)', maxWidth: 700 }}>
           <p className="fade-up" style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-xs)',
-            color: 'var(--color-primary)',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            marginBottom: 'var(--space-5)',
-            animationDelay: '0.1s'
+            fontFamily: 'var(--font-display)', fontSize: 'var(--text-xs)',
+            color: 'var(--color-primary)', letterSpacing: '0.3em',
+            textTransform: 'uppercase', marginBottom: 'var(--space-5)', animationDelay: '0.1s'
           }}>NASA API · Three.js · React</p>
 
           <h1 className="fade-up" style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-3xl)',
-            fontWeight: 800,
-            lineHeight: 1.05,
-            marginBottom: 'var(--space-5)',
+            fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)',
+            fontWeight: 800, lineHeight: 1.05, marginBottom: 'var(--space-5)',
             background: 'linear-gradient(160deg, #ffffff 0%, var(--color-primary) 60%, var(--color-nebula) 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            animationDelay: '0.2s'
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', animationDelay: '0.2s'
           }}>Space Explorer</h1>
 
           <p className="fade-up" style={{
-            fontSize: 'var(--text-lg)',
-            color: 'var(--color-text-muted)',
-            maxWidth: '44ch',
-            margin: '0 auto var(--space-8)',
-            lineHeight: 1.7,
-            animationDelay: '0.3s'
-          }}>
-            Explora el universo con imágenes reales de la NASA y fotos del rover Curiosity en Marte
-          </p>
+            fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)',
+            maxWidth: '44ch', margin: '0 auto var(--space-8)',
+            lineHeight: 1.7, animationDelay: '0.3s'
+          }}>Explora el universo con imágenes reales de la NASA y fotos del rover Curiosity en Marte</p>
 
           <a className="fade-up" href="#content" style={{
-            padding: 'var(--space-4) var(--space-8)',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--color-primary)',
-            color: '#050810',
-            fontWeight: 700,
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-sm)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            display: 'inline-block',
-            transition: 'all var(--transition)',
-            boxShadow: 'var(--shadow-glow)',
+            padding: 'var(--space-4) var(--space-8)', borderRadius: 'var(--radius-full)',
+            background: 'var(--color-primary)', color: '#050810',
+            fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)',
+            letterSpacing: '0.08em', textTransform: 'uppercase', display: 'inline-block',
+            transition: 'all var(--transition)', boxShadow: 'var(--shadow-glow)',
             animationDelay: '0.4s'
           }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-hover)'; e.currentTarget.style.transform = 'scale(1.04)' }}
@@ -253,7 +213,6 @@ export default function App() {
           >Explorar el universo →</a>
         </div>
 
-        {/* Scroll hint animado */}
         <div style={{
           position: 'absolute', bottom: 'var(--space-8)', left: '50%',
           transform: 'translateX(-50%)',
@@ -267,24 +226,17 @@ export default function App() {
         </div>
       </header>
 
-      {/* ===== NAVBAR STICKY ===== */}
+      {/* NAVBAR */}
       <nav id="content" style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(5,8,16,0.92)',
-        backdropFilter: 'blur(16px)',
+        background: 'rgba(5,8,16,0.92)', backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--color-border)',
         padding: 'var(--space-3) var(--space-8)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 'var(--space-4)'
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)'
       }}>
         <span style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 'var(--text-sm)',
-          color: 'var(--color-primary)',
-          letterSpacing: '0.1em'
+          fontFamily: 'var(--font-display)', fontWeight: 700,
+          fontSize: 'var(--text-sm)', color: 'var(--color-primary)', letterSpacing: '0.1em'
         }}>🚀 SPACE EXPLORER</span>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
@@ -293,21 +245,12 @@ export default function App() {
             { id: 'mars', label: '🔴 Marte' }
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              padding: 'var(--space-2) var(--space-5)',
-              borderRadius: 'var(--radius-full)',
-              border: activeTab === tab.id
-                ? '1px solid rgba(99,179,237,0.5)'
-                : '1px solid transparent',
-              background: activeTab === tab.id
-                ? 'rgba(99,179,237,0.12)'
-                : 'transparent',
-              color: activeTab === tab.id
-                ? 'var(--color-primary)'
-                : 'var(--color-text-muted)',
-              fontSize: 'var(--text-sm)',
-              fontFamily: 'var(--font-display)',
-              fontWeight: activeTab === tab.id ? 600 : 400,
-              transition: 'all var(--transition)',
+              padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)',
+              border: activeTab === tab.id ? '1px solid rgba(99,179,237,0.5)' : '1px solid transparent',
+              background: activeTab === tab.id ? 'rgba(99,179,237,0.12)' : 'transparent',
+              color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
+              fontSize: 'var(--text-sm)', fontFamily: 'var(--font-display)',
+              fontWeight: activeTab === tab.id ? 600 : 400, transition: 'all var(--transition)',
             }}
               onMouseEnter={e => { if (activeTab !== tab.id) e.currentTarget.style.color = 'var(--color-text)' }}
               onMouseLeave={e => { if (activeTab !== tab.id) e.currentTarget.style.color = 'var(--color-text-muted)' }}
@@ -316,30 +259,18 @@ export default function App() {
         </div>
       </nav>
 
-      {/* ===== CONTENIDO PRINCIPAL ===== */}
       <main>
         {activeTab === 'apod'
           ? <APODSection />
-          : (
-            <div style={{ padding: 'var(--space-16) var(--space-8)', maxWidth: 1200, margin: '0 auto' }}>
-              <MarsGallery />
-            </div>
-          )
+          : <div style={{ padding: 'var(--space-16) var(--space-8)', maxWidth: 1200, margin: '0 auto' }}><MarsGallery /></div>
         }
       </main>
 
-      {/* ===== FOOTER ===== */}
       <footer style={{
-        borderTop: '1px solid var(--color-border)',
-        padding: 'var(--space-8)',
-        textAlign: 'center',
-        color: 'var(--color-text-faint)',
-        fontSize: 'var(--text-sm)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 'var(--space-4)',
-        flexWrap: 'wrap'
+        borderTop: '1px solid var(--color-border)', padding: 'var(--space-8)',
+        textAlign: 'center', color: 'var(--color-text-faint)', fontSize: 'var(--text-sm)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 'var(--space-4)', flexWrap: 'wrap'
       }}>
         <span>🚀 Space Explorer</span>
         <span style={{ color: 'var(--color-border)' }}>·</span>

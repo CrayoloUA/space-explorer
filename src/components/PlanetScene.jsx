@@ -1,135 +1,176 @@
-import { useRef, useMemo } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Stars, OrbitControls } from '@react-three/drei'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
-function Earth() {
-  const meshRef = useRef()
-  const cloudRef = useRef()
-
-  const earthTexture = useMemo(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 512; canvas.height = 256
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#1a4a8a'
-    ctx.fillRect(0, 0, 512, 256)
-    ctx.fillStyle = '#2d7a3a'
-    const continents = [
-      [130, 120, 60, 45, 0.3], [250, 100, 80, 55, -0.2],
-      [350, 130, 55, 40, 0.5], [400, 170, 45, 35, 0.1],
-      [180, 165, 35, 28, -0.3],
-    ]
-    continents.forEach(([x, y, rx, ry, rot]) => {
-      ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fill()
-    })
-    ctx.fillStyle = '#c8a860'
-    ctx.beginPath(); ctx.ellipse(260, 108, 30, 20, 0, 0, Math.PI * 2); ctx.fill()
-    ctx.fillStyle = '#e8f4ff'
-    ctx.fillRect(0, 0, 512, 20)
-    ctx.fillRect(0, 236, 512, 20)
-    return new THREE.CanvasTexture(canvas)
-  }, [])
-
-  const cloudTexture = useMemo(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 512; canvas.height = 256
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = 'transparent'
-    ctx.clearRect(0, 0, 512, 256)
-    for (let i = 0; i < 80; i++) {
-      const x = Math.random() * 512, y = Math.random() * 256
-      ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.15})`
-      ctx.beginPath()
-      ctx.ellipse(x, y, 20 + Math.random() * 40, 8 + Math.random() * 15, Math.random() * Math.PI, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    return new THREE.CanvasTexture(canvas)
-  }, [])
-
-  useFrame(({ clock }) => {
-    if (meshRef.current) meshRef.current.rotation.y = clock.getElapsedTime() * 0.07
-    if (cloudRef.current) cloudRef.current.rotation.y = clock.getElapsedTime() * 0.09
-  })
-
-  return (
-    <group>
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[2, 64, 64]} />
-        <meshPhongMaterial
-          map={earthTexture}
-          specular={new THREE.Color(0x4488aa)}
-          shininess={20}
-        />
-      </mesh>
-      <mesh ref={cloudRef}>
-        <sphereGeometry args={[2.05, 32, 32]} />
-        <meshPhongMaterial map={cloudTexture} transparent opacity={0.4} depthWrite={false} />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[2.2, 32, 32]} />
-        <meshBasicMaterial color={new THREE.Color(0x2244aa)} transparent opacity={0.04} side={THREE.BackSide} />
-      </mesh>
-    </group>
-  )
-}
-
-function Moon() {
-  const moonRef = useRef()
-
-  const moonTexture = useMemo(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 256; canvas.height = 128
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#9a9a9a'
-    ctx.fillRect(0, 0, 256, 128)
-    for (let i = 0; i < 40; i++) {
-      const x = Math.random() * 256, y = Math.random() * 128
-      ctx.fillStyle = `hsl(0,0%,${30 + Math.random() * 30}%)`
-      ctx.beginPath()
-      ctx.arc(x, y, 2 + Math.random() * 7, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    return new THREE.CanvasTexture(canvas)
-  }, [])
-
-  useFrame(({ clock }) => {
-    if (moonRef.current) {
-      const t = clock.getElapsedTime() * 0.18
-      moonRef.current.position.set(Math.cos(t) * 3.6, Math.sin(t * 0.4) * 0.4, Math.sin(t) * 3.6)
-      moonRef.current.rotation.y = t * 0.5
-    }
-  })
-
-  return (
-    <mesh ref={moonRef}>
-      <sphereGeometry args={[0.38, 32, 32]} />
-      <meshPhongMaterial map={moonTexture} />
-    </mesh>
-  )
-}
-
 export default function PlanetScene() {
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Canvas
-        camera={{ position: [0, 1.5, 6], fov: 50 }}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent' }}
-      >
-        <ambientLight intensity={0.1} />
-        <directionalLight position={[5, 3, 5]} intensity={1.3} color="#fff8e0" />
-        <pointLight position={[-8, -2, -8]} intensity={0.08} color="#4466ff" />
-        <Stars radius={100} depth={60} count={6000} factor={4} saturation={0.1} fade speed={0.8} />
-        <Earth />
-        <Moon />
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          autoRotate={false}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={(3 * Math.PI) / 4}
-        />
-      </Canvas>
-    </div>
-  )
+  const mountRef = useRef(null)
+
+  useEffect(() => {
+    const mount = mountRef.current
+    const w = mount.clientWidth
+    const h = mount.clientHeight
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    renderer.setSize(w, h)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    mount.appendChild(renderer.domElement)
+
+    // Scene & Camera
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 1000)
+    camera.position.set(0, 1.5, 6)
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.15))
+    const sun = new THREE.DirectionalLight(0xfff8e0, 1.4)
+    sun.position.set(5, 3, 5)
+    scene.add(sun)
+    const fill = new THREE.PointLight(0x4466ff, 0.1)
+    fill.position.set(-8, -2, -8)
+    scene.add(fill)
+
+    // Stars
+    const starGeo = new THREE.BufferGeometry()
+    const starCount = 6000
+    const positions = new Float32Array(starCount * 3)
+    for (let i = 0; i < starCount * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 200
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, sizeAttenuation: true })
+    scene.add(new THREE.Points(starGeo, starMat))
+
+    // Earth texture via canvas
+    const makeEarthTex = () => {
+      const c = document.createElement('canvas')
+      c.width = 512; c.height = 256
+      const ctx = c.getContext('2d')
+      ctx.fillStyle = '#1a4a8a'
+      ctx.fillRect(0, 0, 512, 256)
+      ctx.fillStyle = '#2d7a3a'
+      [
+        [130, 120, 60, 45, 0.3], [250, 100, 80, 55, -0.2],
+        [350, 130, 55, 40, 0.5], [400, 170, 45, 35, 0.1],
+        [180, 165, 35, 28, -0.3],
+      ].forEach(([x, y, rx, ry, rot]) => {
+        ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); ctx.fill()
+      })
+      ctx.fillStyle = '#c8a860'
+      ctx.beginPath(); ctx.ellipse(260, 108, 30, 20, 0, 0, Math.PI * 2); ctx.fill()
+      ctx.fillStyle = '#e8f4ff'
+      ctx.fillRect(0, 0, 512, 20); ctx.fillRect(0, 236, 512, 20)
+      return new THREE.CanvasTexture(c)
+    }
+
+    const makeCloudTex = () => {
+      const c = document.createElement('canvas')
+      c.width = 512; c.height = 256
+      const ctx = c.getContext('2d')
+      ctx.clearRect(0, 0, 512, 256)
+      for (let i = 0; i < 80; i++) {
+        ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.15})`
+        ctx.beginPath()
+        ctx.ellipse(Math.random() * 512, Math.random() * 256, 20 + Math.random() * 40, 8 + Math.random() * 15, Math.random() * Math.PI, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return new THREE.CanvasTexture(c)
+    }
+
+    const makeMoonTex = () => {
+      const c = document.createElement('canvas')
+      c.width = 256; c.height = 128
+      const ctx = c.getContext('2d')
+      ctx.fillStyle = '#9a9a9a'
+      ctx.fillRect(0, 0, 256, 128)
+      for (let i = 0; i < 40; i++) {
+        ctx.fillStyle = `hsl(0,0%,${30 + Math.random() * 30}%)`
+        ctx.beginPath()
+        ctx.arc(Math.random() * 256, Math.random() * 128, 2 + Math.random() * 7, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      return new THREE.CanvasTexture(c)
+    }
+
+    // Earth group
+    const earthGroup = new THREE.Group()
+    scene.add(earthGroup)
+
+    const earth = new THREE.Mesh(
+      new THREE.SphereGeometry(2, 64, 64),
+      new THREE.MeshPhongMaterial({ map: makeEarthTex(), specular: new THREE.Color(0x4488aa), shininess: 20 })
+    )
+    earthGroup.add(earth)
+
+    const clouds = new THREE.Mesh(
+      new THREE.SphereGeometry(2.05, 32, 32),
+      new THREE.MeshPhongMaterial({ map: makeCloudTex(), transparent: true, opacity: 0.4, depthWrite: false })
+    )
+    earthGroup.add(clouds)
+
+    const atmo = new THREE.Mesh(
+      new THREE.SphereGeometry(2.2, 32, 32),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0x2244aa), transparent: true, opacity: 0.04, side: THREE.BackSide })
+    )
+    earthGroup.add(atmo)
+
+    // Moon
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.38, 32, 32),
+      new THREE.MeshPhongMaterial({ map: makeMoonTex() })
+    )
+    scene.add(moon)
+
+    // Mouse parallax
+    let mouseX = 0, mouseY = 0
+    const onMouseMove = (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 2
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 2
+    }
+    window.addEventListener('mousemove', onMouseMove)
+
+    // Resize
+    const onResize = () => {
+      const nw = mount.clientWidth, nh = mount.clientHeight
+      camera.aspect = nw / nh
+      camera.updateProjectionMatrix()
+      renderer.setSize(nw, nh)
+    }
+    window.addEventListener('resize', onResize)
+
+    // Animation loop
+    let animId
+    const clock = new THREE.Clock()
+    const animate = () => {
+      animId = requestAnimationFrame(animate)
+      const t = clock.getElapsedTime()
+
+      earth.rotation.y = t * 0.07
+      clouds.rotation.y = t * 0.09
+
+      moon.position.set(
+        Math.cos(t * 0.18) * 3.6,
+        Math.sin(t * 0.072) * 0.4,
+        Math.sin(t * 0.18) * 3.6
+      )
+      moon.rotation.y = t * 0.09
+
+      // Suave parallax con el mouse
+      camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.03
+      camera.position.y += (-mouseY * 0.4 + 1.5 - camera.position.y) * 0.03
+      camera.lookAt(scene.position)
+
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('resize', onResize)
+      renderer.dispose()
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
+    }
+  }, [])
+
+  return <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
 }
