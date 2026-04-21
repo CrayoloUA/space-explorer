@@ -10,12 +10,14 @@
   --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
   --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
   --text-2xl:  clamp(2rem,     1.2rem  + 2.5vw,  3.5rem);
+  --text-3xl:  clamp(2.5rem,   1rem    + 4vw,    5rem);
 
   --space-1: 0.25rem; --space-2: 0.5rem;  --space-3: 0.75rem;
   --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
   --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
   --space-16: 4rem;
 
+  /* Space palette */
   --color-bg:             #050810;
   --color-surface:        #0a0e1a;
   --color-surface-2:      #0f1422;
@@ -29,14 +31,21 @@
   --color-primary:        #63b3ed;
   --color-primary-hover:  #90cdf4;
   --color-accent:         #7c5cbf;
+  --color-accent-hover:   #9f7fe0;
+  --color-nebula:         #c084fc;
   --color-star:           #ffd700;
+  --color-mars:           #e05050;
   --color-error:          #fc8181;
+  --color-success:        #68d391;
 
   --radius-sm: 0.375rem; --radius-md: 0.5rem;
   --radius-lg: 0.75rem;  --radius-xl: 1rem;
   --radius-full: 9999px;
 
-  --shadow-glow: 0 0 30px rgba(99,179,237,0.2);
+  --shadow-md: 0 4px 20px rgba(99,179,237,0.08);
+  --shadow-lg: 0 8px 40px rgba(99,179,237,0.12);
+  --shadow-glow: 0 0 40px rgba(99,179,237,0.25);
+  --shadow-nebula: 0 0 40px rgba(192,132,252,0.2);
   --transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -65,16 +74,45 @@ ul { list-style: none; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-accent); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-hover); }
 
+/* Shimmer skeleton */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--color-surface-offset) 25%, var(--color-surface-2) 50%, var(--color-surface-offset) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-offset) 25%,
+    var(--color-surface-2) 50%,
+    var(--color-surface-offset) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
   border-radius: var(--radius-md);
+}
+
+/* Floating animation para el hero */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Pulse glow */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Fade in desde abajo */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+  animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
