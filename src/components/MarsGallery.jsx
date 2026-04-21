@@ -1,24 +1,68 @@
 import { useState } from 'react'
 import { useMarsRover } from '../hooks/useNASA'
 
-export default function MarsGallery() {
+export default function MarsGallery({ language = 'es' }) {
   const [page, setPage] = useState(1)
-  const { data, loading, error } = useMarsRover(page)
+  const [earthDate, setEarthDate] = useState('2021-06-03')
+  const { data, loading, error } = useMarsRover(page, earthDate)
+
+  const t = {
+    es: {
+      title: '🔴 Marte — Rover Curiosity',
+      subtitle: 'Fotos reales desde la superficie marciana',
+      page: 'Página',
+      prev: '← Anterior',
+      next: 'Siguiente →',
+      error: 'Error cargando fotos de Marte',
+      date: 'Fecha terrestre',
+      photos: 'fotos',
+      camera: 'Cámara',
+      noResults: 'No hay fotos para esa fecha. Prueba otra.'
+    },
+    en: {
+      title: '🔴 Mars — Curiosity Rover',
+      subtitle: 'Real photos from the Martian surface',
+      page: 'Page',
+      prev: '← Previous',
+      next: 'Next →',
+      error: 'Error loading Mars photos',
+      date: 'Earth date',
+      photos: 'photos',
+      camera: 'Camera',
+      noResults: 'No photos for that date. Try another one.'
+    }
+  }[language]
 
   if (error) return (
     <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-error)' }}>
-      🛸 Error cargando fotos de Marte: {error}
+      🛸 {t.error}: {error}
     </div>
   )
 
   return (
     <section>
-      <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)' }}>
-          🔴 Marte — Rover Curiosity
-        </h2>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>Sol 1000 · Fotos reales desde la superficie marciana</p>
+      <div style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'end' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)' }}>
+            {t.title}
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{t.subtitle}</p>
+        </div>
+        <div>
+          <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-2)' }}>{t.date}</label>
+          <input type="date" value={earthDate} onChange={(e) => { setEarthDate(e.target.value); setPage(1) }} style={{
+            padding: 'var(--space-2) var(--space-3)', background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)'
+          }} />
+        </div>
       </div>
+
+      {!loading && data.length > 0 && (
+        <div style={{ marginBottom: 'var(--space-4)', display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <span style={{ color: 'var(--color-primary)', fontSize: 'var(--text-sm)' }}>{data.length} {t.photos}</span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{t.camera}: {data[0].camera.full_name}</span>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 'var(--space-3)' }}>
@@ -26,6 +70,8 @@ export default function MarsGallery() {
             <div key={i} className="skeleton" style={{ aspectRatio: '1', borderRadius: 'var(--radius-lg)' }} />
           ))}
         </div>
+      ) : data.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-text-muted)' }}>{t.noResults}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', gap: 'var(--space-3)' }}>
           {data.slice(0, 8).map(photo => (
@@ -33,7 +79,7 @@ export default function MarsGallery() {
               aspectRatio: '1', borderRadius: 'var(--radius-lg)', overflow: 'hidden',
               border: '1px solid var(--color-border)', position: 'relative', background: 'var(--color-surface-offset)',
             }}>
-              <img src={photo.img_src} alt={`Mars sol ${photo.sol}`} loading="lazy"
+              <img src={photo.img_src} alt={`Mars ${photo.earth_date}`} loading="lazy"
                 width="200" height="200"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(30%)' }} />
               <div style={{
@@ -57,9 +103,9 @@ export default function MarsGallery() {
           background: page === 1 ? 'transparent' : 'var(--color-surface-2)',
           color: page === 1 ? 'var(--color-text-faint)' : 'var(--color-text)',
           fontSize: 'var(--text-sm)',
-        }}>← Anterior</button>
+        }}>{t.prev}</button>
         <span style={{ padding: 'var(--space-2) var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-          Página {page}
+          {t.page} {page}
         </span>
         <button onClick={() => setPage(p => p + 1)} style={{
           padding: 'var(--space-2) var(--space-5)',
@@ -68,7 +114,7 @@ export default function MarsGallery() {
           background: 'rgba(99,179,237,0.08)',
           color: 'var(--color-primary)',
           fontSize: 'var(--text-sm)',
-        }}>Siguiente →</button>
+        }}>{t.next}</button>
       </div>
     </section>
   )

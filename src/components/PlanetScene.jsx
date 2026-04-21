@@ -26,17 +26,13 @@ export default function PlanetScene() {
     fill.position.set(-8, -2, -8)
     scene.add(fill)
 
-    // Stars
     const starGeo = new THREE.BufferGeometry()
     const starCount = 6000
     const positions = new Float32Array(starCount * 3)
-    for (let i = 0; i < starCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 200
-    }
+    for (let i = 0; i < starCount * 3; i++) positions[i] = (Math.random() - 0.5) * 200
     starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
     scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, sizeAttenuation: true })))
 
-    // Earth texture
     const makeEarthTex = () => {
       const c = document.createElement('canvas')
       c.width = 512
@@ -46,11 +42,8 @@ export default function PlanetScene() {
       ctx.fillRect(0, 0, 512, 256)
       ctx.fillStyle = '#2d7a3a'
       const continents = [
-        [130, 120, 60, 45, 0.3],
-        [250, 100, 80, 55, -0.2],
-        [350, 130, 55, 40, 0.5],
-        [400, 170, 45, 35, 0.1],
-        [180, 165, 35, 28, -0.3]
+        [130, 120, 60, 45, 0.3], [250, 100, 80, 55, -0.2], [350, 130, 55, 40, 0.5],
+        [400, 170, 45, 35, 0.1], [180, 165, 35, 28, -0.3]
       ]
       for (let i = 0; i < continents.length; i++) {
         const co = continents[i]
@@ -78,15 +71,7 @@ export default function PlanetScene() {
         const alpha = 0.05 + Math.random() * 0.15
         ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')'
         ctx.beginPath()
-        ctx.ellipse(
-          Math.random() * 512,
-          Math.random() * 256,
-          20 + Math.random() * 40,
-          8 + Math.random() * 15,
-          Math.random() * Math.PI,
-          0,
-          Math.PI * 2
-        )
+        ctx.ellipse(Math.random() * 512, Math.random() * 256, 20 + Math.random() * 40, 8 + Math.random() * 15, Math.random() * Math.PI, 0, Math.PI * 2)
         ctx.fill()
       }
       return new THREE.CanvasTexture(c)
@@ -109,39 +94,24 @@ export default function PlanetScene() {
       return new THREE.CanvasTexture(c)
     }
 
-    // Earth group
     const earthGroup = new THREE.Group()
     scene.add(earthGroup)
 
     const earth = new THREE.Mesh(
       new THREE.SphereGeometry(2, 64, 64),
-      new THREE.MeshPhongMaterial({
-        map: makeEarthTex(),
-        specular: new THREE.Color(0x4488aa),
-        shininess: 20
-      })
+      new THREE.MeshPhongMaterial({ map: makeEarthTex(), specular: new THREE.Color(0x4488aa), shininess: 20 })
     )
     earthGroup.add(earth)
 
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(2.05, 32, 32),
-      new THREE.MeshPhongMaterial({
-        map: makeCloudTex(),
-        transparent: true,
-        opacity: 0.4,
-        depthWrite: false
-      })
+      new THREE.MeshPhongMaterial({ map: makeCloudTex(), transparent: true, opacity: 0.4, depthWrite: false })
     )
     earthGroup.add(clouds)
 
     const atmo = new THREE.Mesh(
       new THREE.SphereGeometry(2.2, 32, 32),
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(0x2244aa),
-        transparent: true,
-        opacity: 0.04,
-        side: THREE.BackSide
-      })
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(0x2244aa), transparent: true, opacity: 0.04, side: THREE.BackSide })
     )
     earthGroup.add(atmo)
 
@@ -169,17 +139,17 @@ export default function PlanetScene() {
     window.addEventListener('resize', onResize)
 
     let animId
-    const clock = new THREE.Clock()
+    const timer = new THREE.Timer()
+    timer.connect(document)
+    timer.start()
+
     const animate = () => {
       animId = requestAnimationFrame(animate)
-      const t = clock.getElapsedTime()
+      timer.update()
+      const t = timer.getElapsed()
       earth.rotation.y = t * 0.07
       clouds.rotation.y = t * 0.09
-      moon.position.set(
-        Math.cos(t * 0.18) * 3.6,
-        Math.sin(t * 0.072) * 0.4,
-        Math.sin(t * 0.18) * 3.6
-      )
+      moon.position.set(Math.cos(t * 0.18) * 3.6, Math.sin(t * 0.072) * 0.4, Math.sin(t * 0.18) * 3.6)
       moon.rotation.y = t * 0.09
       camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.03
       camera.position.y += (-mouseY * 0.4 + 1.5 - camera.position.y) * 0.03
@@ -193,9 +163,7 @@ export default function PlanetScene() {
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('resize', onResize)
       renderer.dispose()
-      if (mount.contains(renderer.domElement)) {
-        mount.removeChild(renderer.domElement)
-      }
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
     }
   }, [])
 
