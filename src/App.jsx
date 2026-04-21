@@ -9,7 +9,7 @@ function GallerySkeletons() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: 'var(--space-6)' }}>
       {Array.from({ length: 9 }, (_, i) => (
-        <div key={i} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+        <div key={i} className="glass-panel" style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
           <div className="skeleton" style={{ aspectRatio: '16/9' }} />
           <div style={{ padding: 'var(--space-4) var(--space-5)' }}>
             <div className="skeleton" style={{ height: '1.2em', marginBottom: 'var(--space-3)' }} />
@@ -22,95 +22,207 @@ function GallerySkeletons() {
   )
 }
 
+function FavoritesSection({ language, favorites, onOpen, toggleFavorite }) {
+  const t = {
+    es: { title: 'Tus favoritos', subtitle: 'Las imágenes que guardaste para volver a ver después.', empty: 'Aún no has guardado favoritos.' },
+    en: { title: 'Your favorites', subtitle: 'Images you saved to revisit later.', empty: 'You have no favorites yet.' },
+  }[language]
+
+  return (
+    <section className="section-shell" style={{ paddingTop: 0 }}>
+      <div style={{ marginBottom: 'var(--space-8)' }}>
+        <h2 className="section-title" style={{ marginBottom: 'var(--space-2)' }}>{t.title}</h2>
+        <p className="section-subtitle">{t.subtitle}</p>
+      </div>
+      {favorites.length === 0 ? (
+        <div className="glass-panel" style={{ padding: 'var(--space-8)', borderRadius: 'var(--radius-xl)', textAlign: 'center', color: 'var(--color-text-muted)' }}>{t.empty}</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 'var(--space-6)' }}>
+          {favorites.slice(0, 3).map(item => (
+            <APODCard
+              key={item.date}
+              item={item}
+              onClick={onOpen}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={true}
+              language={language}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function InsightsStrip({ language, favoritesCount, items }) {
+  const videos = items.filter(item => item.media_type === 'video').length
+  const images = items.filter(item => item.media_type === 'image').length
+  const latest = items[0]?.date || '—'
+
+  const t = {
+    es: {
+      title: 'Panel rápido',
+      subtitle: 'Un vistazo a tu exploración actual.',
+      favorites: 'Favoritos guardados',
+      images: 'Imágenes disponibles',
+      videos: 'Videos disponibles',
+      latest: 'Última fecha cargada',
+    },
+    en: {
+      title: 'Quick panel',
+      subtitle: 'A snapshot of your current exploration.',
+      favorites: 'Saved favorites',
+      images: 'Available images',
+      videos: 'Available videos',
+      latest: 'Latest loaded date',
+    }
+  }[language]
+
+  const metrics = [
+    { label: t.favorites, value: favoritesCount },
+    { label: t.images, value: images },
+    { label: t.videos, value: videos },
+    { label: t.latest, value: latest },
+  ]
+
+  return (
+    <section className="section-shell" style={{ paddingTop: 0 }}>
+      <div style={{ marginBottom: 'var(--space-8)' }}>
+        <h2 className="section-title" style={{ marginBottom: 'var(--space-2)' }}>{t.title}</h2>
+        <p className="section-subtitle">{t.subtitle}</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)' }}>
+        {metrics.map(metric => (
+          <div key={metric.label} className="metric-card glass-panel">
+            <div className="metric-value">{metric.value}</div>
+            <div className="metric-label">{metric.label}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function APODSection({ language, favorites, toggleFavorite }) {
   const [search, setSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
+  const [filter, setFilter] = useState('all')
   const { data, loading, error, refetch } = useAPODGallery(9)
 
   const t = {
     es: {
       badge: 'NASA · APOD API',
       title: 'Astronomy Picture of the Day',
-      subtitle: 'Imágenes reales del universo seleccionadas por la NASA',
+      subtitle: 'Imágenes reales del universo seleccionadas por la NASA, con curaduría diaria y una experiencia más inmersiva.',
       refresh: '🔄 Nueva selección',
       search: 'Buscar por título o descripción...',
       lost: 'Señal perdida',
       retry: '🔄 Reintentar',
       noResults: 'No se encontraron resultados para',
-      favorites: 'Favoritos'
+      favorites: 'Favoritos',
+      all: 'Todo',
+      images: 'Imágenes',
+      videos: 'Videos',
+      heroCard1: 'Galería curada con contenido astronómico real.',
+      heroCard2: 'Explora Marte y guarda tus hallazgos favoritos.',
     },
     en: {
       badge: 'NASA · APOD API',
       title: 'Astronomy Picture of the Day',
-      subtitle: 'Real NASA-selected images of the universe',
+      subtitle: 'Real NASA-selected images of the universe, with daily curation and a more immersive experience.',
       refresh: '🔄 New selection',
       search: 'Search by title or description...',
       lost: 'Signal lost',
       retry: '🔄 Retry',
       noResults: 'No results found for',
-      favorites: 'Favorites'
+      favorites: 'Favorites',
+      all: 'All',
+      images: 'Images',
+      videos: 'Videos',
+      heroCard1: 'Curated gallery with real astronomical content.',
+      heroCard2: 'Explore Mars and save your favorite discoveries.',
     }
   }[language]
 
-  const filtered = useMemo(() => data.filter(item =>
-    item.title.toLowerCase().includes(search.toLowerCase()) ||
-    item.explanation?.toLowerCase().includes(search.toLowerCase())
-  ), [data, search])
+  const filtered = useMemo(() => data.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || item.explanation?.toLowerCase().includes(search.toLowerCase())
+    const matchesFilter = filter === 'all' ? true : item.media_type === (filter === 'images' ? 'image' : 'video')
+    return matchesSearch && matchesFilter
+  }), [data, search, filter])
 
   return (
-    <section style={{ padding: 'var(--space-16) var(--space-8)', maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ marginBottom: 'var(--space-10)', display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-display)' }}>{t.badge}</p>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: 'var(--space-2)', background: 'linear-gradient(90deg, var(--color-primary), var(--color-nebula))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{t.title}</h2>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-base)' }}>{t.subtitle}</p>
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ color: 'var(--color-star)', fontSize: 'var(--text-sm)' }}>⭐ {favorites.length} {t.favorites}</span>
-          <button onClick={refetch} style={{ padding: 'var(--space-3) var(--space-5)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(99,179,237,0.3)', background: 'rgba(99,179,237,0.08)', color: 'var(--color-primary)', fontSize: 'var(--text-sm)', transition: 'all var(--transition)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>{t.refresh}</button>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 'var(--space-8)', position: 'relative', maxWidth: 480 }}>
-        <span style={{ position: 'absolute', left: 'var(--space-4)', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-faint)', pointerEvents: 'none' }}>🔍</span>
-        <input type="search" placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%', padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-full)', color: 'var(--color-text)', fontSize: 'var(--text-sm)', outline: 'none' }} />
-      </div>
-
-      {error && (
-        <div style={{ textAlign: 'center', padding: 'var(--space-16)', color: 'var(--color-text-muted)' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: 'var(--space-4)' }}>🛸</div>
-          <h3 style={{ color: 'var(--color-error)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-display)' }}>{t.lost}</h3>
-          <p style={{ marginBottom: 'var(--space-6)', fontSize: 'var(--text-sm)', maxWidth: '36ch', margin: '0 auto var(--space-6)' }}>{error}</p>
-          <button onClick={refetch} style={{ padding: 'var(--space-3) var(--space-6)', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-error)', background: 'rgba(252,129,129,0.1)', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{t.retry}</button>
-        </div>
-      )}
-
-      {loading ? <GallerySkeletons /> : (
-        <>
-          {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 'var(--space-16)', color: 'var(--color-text-muted)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-4)' }}>🔭</div>
-              <p>{t.noResults} <strong style={{ color: 'var(--color-text)' }}>"{search}"</strong></p>
+    <>
+      <section className="section-shell">
+        <div className="glass-panel float-soft" style={{ borderRadius: 'calc(var(--radius-xl) + 8px)', padding: 'var(--space-8)', marginBottom: 'var(--space-8)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 10% 20%, rgba(126,208,255,0.14), transparent 25%), radial-gradient(circle at 80% 0%, rgba(211,146,255,0.14), transparent 25%)' }} />
+          <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 'var(--space-6)' }}>
+            <div>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-display)' }}>{t.badge}</p>
+              <h2 className="section-title" style={{ marginBottom: 'var(--space-3)', background: 'linear-gradient(90deg, var(--color-primary), var(--color-nebula))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t.title}</h2>
+              <p className="section-subtitle">{t.subtitle}</p>
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: 'var(--space-6)' }}>
-              {filtered.map(item => (
-                <APODCard
-                  key={item.date}
-                  item={item}
-                  onClick={setSelectedItem}
-                  onToggleFavorite={toggleFavorite}
-                  isFavorite={favorites.some(f => f.date === item.date)}
-                  language={language}
-                />
-              ))}
+            <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+              <div className="metric-card glass-panel"><div className="metric-label">01</div><div style={{ marginTop: 'var(--space-2)' }}>{t.heroCard1}</div></div>
+              <div className="metric-card glass-panel"><div className="metric-label">02</div><div style={{ marginTop: 'var(--space-2)' }}>{t.heroCard2}</div></div>
             </div>
-          )}
-        </>
-      )}
+          </div>
+        </div>
 
+        <div style={{ marginBottom: 'var(--space-8)', display: 'flex', gap: 'var(--space-4)', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ color: 'var(--color-star)', fontSize: 'var(--text-sm)' }}>⭐ {favorites.length} {t.favorites}</span>
+            <button onClick={refetch} className="glass-panel" style={{ padding: 'var(--space-3) var(--space-5)', borderRadius: 'var(--radius-full)', color: 'var(--color-primary)', fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>{t.refresh}</button>
+          </div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+            {['all', 'images', 'videos'].map(key => (
+              <button key={key} onClick={() => setFilter(key)} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', color: filter === key ? 'var(--color-primary)' : 'var(--color-text-muted)', borderColor: filter === key ? 'var(--color-border-strong)' : 'var(--color-border)' }}>{t[key]}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 'var(--space-8)', position: 'relative', maxWidth: 520 }}>
+          <span style={{ position: 'absolute', left: 'var(--space-4)', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-faint)', pointerEvents: 'none' }}>🔍</span>
+          <input type="search" placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} className="glass-panel" style={{ width: '100%', padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)', borderRadius: 'var(--radius-full)', color: 'var(--color-text)', fontSize: 'var(--text-sm)', outline: 'none' }} />
+        </div>
+
+        {error && (
+          <div className="glass-panel" style={{ textAlign: 'center', padding: 'var(--space-16)', color: 'var(--color-text-muted)', borderRadius: 'var(--radius-xl)' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: 'var(--space-4)' }}>🛸</div>
+            <h3 style={{ color: 'var(--color-error)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-display)' }}>{t.lost}</h3>
+            <p style={{ marginBottom: 'var(--space-6)', fontSize: 'var(--text-sm)', maxWidth: '36ch', margin: '0 auto var(--space-6)' }}>{error}</p>
+            <button onClick={refetch} style={{ padding: 'var(--space-3) var(--space-6)', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-error)', background: 'rgba(252,129,129,0.1)', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{t.retry}</button>
+          </div>
+        )}
+
+        {loading ? <GallerySkeletons /> : (
+          <>
+            {filtered.length === 0 ? (
+              <div className="glass-panel" style={{ textAlign: 'center', padding: 'var(--space-16)', color: 'var(--color-text-muted)', borderRadius: 'var(--radius-xl)' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-4)' }}>🔭</div>
+                <p>{t.noResults} <strong style={{ color: 'var(--color-text)' }}>"{search}"</strong></p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: 'var(--space-6)' }}>
+                {filtered.map(item => (
+                  <APODCard
+                    key={item.date}
+                    item={item}
+                    onClick={setSelectedItem}
+                    onToggleFavorite={toggleFavorite}
+                    isFavorite={favorites.some(f => f.date === item.date)}
+                    language={language}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      <InsightsStrip language={language} favoritesCount={favorites.length} items={data} />
+      <FavoritesSection language={language} favorites={favorites} onOpen={setSelectedItem} toggleFavorite={toggleFavorite} />
       {selectedItem && <APODModal item={selectedItem} onClose={() => setSelectedItem(null)} language={language} />}
-    </section>
+    </>
   )
 }
 
@@ -131,33 +243,59 @@ export default function App() {
   }
 
   const t = {
-    es: { hero: 'Explora el universo con imágenes reales de la NASA y fotos del rover Curiosity en Marte', cta: 'Explorar el universo →', scroll: 'SCROLL', mars: '🔴 Marte', apod: '🌌 APOD Gallery' },
-    en: { hero: 'Explore the universe with real NASA images and Curiosity rover photos from Mars', cta: 'Explore the universe →', scroll: 'SCROLL', mars: '🔴 Mars', apod: '🌌 APOD Gallery' },
+    es: {
+      hero: 'Explora el universo con imágenes reales de la NASA, una escena 3D más viva y una experiencia visual más cinematográfica.',
+      cta: 'Explorar el universo →',
+      scroll: 'SCROLL',
+      mars: '🔴 Marte',
+      apod: '🌌 APOD Gallery',
+      pill1: 'Visual inmersivo',
+      pill2: 'Datos reales NASA',
+      pill3: 'Exploración interactiva',
+    },
+    en: {
+      hero: 'Explore the universe with real NASA images, a livelier 3D scene, and a more cinematic visual experience.',
+      cta: 'Explore the universe →',
+      scroll: 'SCROLL',
+      mars: '🔴 Mars',
+      apod: '🌌 APOD Gallery',
+      pill1: 'Immersive visuals',
+      pill2: 'Real NASA data',
+      pill3: 'Interactive exploration',
+    },
   }[language]
 
   return (
     <div>
-      <header style={{ position: 'relative', height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <header style={{ position: 'relative', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}><PlanetScene /></div>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center bottom, rgba(5,8,16,0.5) 0%, transparent 60%), linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%)' }} />
-        <div style={{ position: 'relative', textAlign: 'center', padding: 'var(--space-4)', maxWidth: 700 }}>
-          <p className="fade-up" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xs)', color: 'var(--color-primary)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>NASA API · Three.js · React</p>
-          <h1 className="fade-up" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', fontWeight: 800, lineHeight: 1.05, marginBottom: 'var(--space-5)', background: 'linear-gradient(160deg, #ffffff 0%, var(--color-primary) 60%, var(--color-nebula) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Space Explorer</h1>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(4,7,13,0.18) 0%, rgba(4,7,13,0.45) 55%, rgba(4,7,13,0.92) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(4,7,13,0.2), rgba(4,7,13,0.35) 40%, var(--color-bg) 100%)' }} />
+
+        <div style={{ position: 'relative', textAlign: 'center', padding: 'var(--space-6)', maxWidth: 900 }}>
+          <p className="fade-up" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xs)', color: 'var(--color-primary)', letterSpacing: '0.34em', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>NASA API · Three.js · React</p>
+          <h1 className="fade-up" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-hero)', fontWeight: 800, lineHeight: 0.95, marginBottom: 'var(--space-5)', letterSpacing: '-0.05em', background: 'linear-gradient(155deg, #ffffff 0%, var(--color-primary) 55%, var(--color-nebula) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Space Explorer</h1>
           <p className="fade-up" style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)', maxWidth: '44ch', margin: '0 auto var(--space-8)', lineHeight: 1.7 }}>{t.hero}</p>
-          <a className="fade-up" href="#content" style={{ padding: 'var(--space-4) var(--space-8)', borderRadius: 'var(--radius-full)', background: 'var(--color-primary)', color: '#050810', fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'inline-block', transition: 'all var(--transition)', boxShadow: 'var(--shadow-glow)' }}>{t.cta}</a>
+          <div className="fade-up" style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-8)' }}>
+            {[t.pill1, t.pill2, t.pill3].map(pill => (
+              <span key={pill} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{pill}</span>
+            ))}
+          </div>
+          <a className="fade-up glass-panel" href="#content" style={{ padding: 'var(--space-4) var(--space-8)', borderRadius: 'var(--radius-full)', background: 'linear-gradient(135deg, rgba(126,208,255,0.18), rgba(211,146,255,0.16))', color: 'var(--color-text)', fontWeight: 700, fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'inline-block', boxShadow: 'var(--shadow-glow)' }}>{t.cta}</a>
         </div>
+
         <div style={{ position: 'absolute', bottom: 'var(--space-8)', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-faint)', fontSize: 'var(--text-xs)', letterSpacing: '0.15em', animation: 'pulseGlow 2.5s ease-in-out infinite' }}>
           <span>{t.scroll}</span>
-          <div style={{ width: 1, height: 48, background: 'linear-gradient(var(--color-primary), transparent)', opacity: 0.5 }} />
+          <div style={{ width: 1, height: 56, background: 'linear-gradient(var(--color-primary), transparent)', opacity: 0.6 }} />
         </div>
       </header>
 
-      <nav id="content" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(5,8,16,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--color-border)', padding: 'var(--space-3) var(--space-8)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+      <nav id="content" className="glass-panel" style={{ position: 'sticky', top: 0, zIndex: 50, margin: '0 var(--space-4)', borderRadius: '0 0 var(--radius-xl) var(--radius-xl)', padding: 'var(--space-3) var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--color-primary)', letterSpacing: '0.1em' }}>🚀 SPACE EXPLORER</span>
         <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => setLanguage(l => l === 'es' ? 'en' : 'es')} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>{language.toUpperCase()}</button>
+          <button onClick={() => setLanguage(l => l === 'es' ? 'en' : 'es')} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)', color: 'var(--color-text)' }}>{language.toUpperCase()}</button>
           {[{ id: 'apod', label: t.apod }, { id: 'mars', label: t.mars }].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)', border: activeTab === tab.id ? '1px solid rgba(99,179,237,0.5)' : '1px solid transparent', background: activeTab === tab.id ? 'rgba(99,179,237,0.12)' : 'transparent', color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-display)', fontWeight: activeTab === tab.id ? 600 : 400 }}>{tab.label}</button>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="glass-panel" style={{ padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)', color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)', borderColor: activeTab === tab.id ? 'var(--color-border-strong)' : 'var(--color-border)' }}>{tab.label}</button>
           ))}
         </div>
       </nav>
@@ -166,7 +304,7 @@ export default function App() {
         {activeTab === 'apod' ? (
           <APODSection language={language} favorites={favorites} toggleFavorite={toggleFavorite} />
         ) : (
-          <div style={{ padding: 'var(--space-16) var(--space-8)', maxWidth: 1200, margin: '0 auto' }}><MarsGallery language={language} /></div>
+          <div className="section-shell"><MarsGallery language={language} /></div>
         )}
       </main>
 
