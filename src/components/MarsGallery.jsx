@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { useMarsRover } from '../hooks/useNASA'
 
 const SOL_PRESETS = [
+  { label: 'Sol 50', value: 50 },
   { label: 'Sol 100', value: 100 },
   { label: 'Sol 500', value: 500 },
+  { label: 'Sol 800', value: 800 },
   { label: 'Sol 1000', value: 1000 },
+  { label: 'Sol 1200', value: 1200 },
   { label: 'Sol 1500', value: 1500 },
-  { label: 'Sol 2000', value: 2000 },
-  { label: 'Sol 2500', value: 2500 },
-  { label: 'Sol 3000', value: 3000 },
-  { label: 'Sol 3500', value: 3500 },
+  { label: 'Sol 1800', value: 1800 },
 ]
 
 export default function MarsGallery({ language = 'es' }) {
@@ -19,7 +19,7 @@ export default function MarsGallery({ language = 'es' }) {
 
   const t = {
     es: {
-      title: '\uD83D\uDD34 Marte \u2014 Rover Curiosity',
+      title: '\uD83D\uDD34 Marte \u2014 Rover Perseverance',
       subtitle: 'Fotos reales desde la superficie marciana',
       page: 'P\u00e1gina',
       prev: '\u2190 Anterior',
@@ -33,7 +33,7 @@ export default function MarsGallery({ language = 'es' }) {
       custom: 'Personalizado',
     },
     en: {
-      title: '\uD83D\uDD34 Mars \u2014 Curiosity Rover',
+      title: '\uD83D\uDD34 Mars \u2014 Perseverance Rover',
       subtitle: 'Real photos from the Martian surface',
       page: 'Page',
       prev: '\u2190 Previous',
@@ -49,8 +49,18 @@ export default function MarsGallery({ language = 'es' }) {
   }[language]
 
   if (error) return (
-    <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--color-error)' }}>
-      \uD83D\uDEF8 {t.error}
+    <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
+      <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-4)' }}>🛸</div>
+      <h3 style={{ color: 'var(--color-error)', marginBottom: 'var(--space-3)' }}>
+        {language === 'es' ? 'Sin señal de Marte' : 'No Mars signal'}
+      </h3>
+      <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', maxWidth: '42ch', margin: '0 auto var(--space-6)' }}>
+        {error}
+      </p>
+      <a href="https://api.nasa.gov/" target="_blank" rel="noreferrer"
+        style={{ display: 'inline-block', padding: 'var(--space-2) var(--space-5)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(99,179,237,0.4)', background: 'rgba(99,179,237,0.08)', color: 'var(--color-primary)', fontSize: 'var(--text-sm)', textDecoration: 'none' }}>
+        {language === 'es' ? '🔑 Obtener API Key gratis' : '🔑 Get free API Key'}
+      </a>
     </div>
   )
 
