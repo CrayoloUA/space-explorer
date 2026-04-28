@@ -200,4 +200,4 @@ Este proxy solo existe en desarrollo. En produccion es necesario configurar un p
 
 ## Autor
 
-Desarrollado por **CrayoloUA** — Parcial 2, Desarrollo Web
+Julian Andres Vargas Sepulveda - Maria Jose Ramirez
