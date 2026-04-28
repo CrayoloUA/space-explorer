@@ -4,7 +4,7 @@ import axios from 'axios'                      // librería para hacer peticione
 // lee la clave del archivo .env.local (VITE_NASA_API_KEY=tu_clave); si no existe usa DEMO_KEY
 const API_KEY = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY'
 const BASE_URL = 'https://api.nasa.gov'                       // URL base de la NASA API
-const JPL_BASE = '/jpl-proxy/rss/api'                         // ruta del proxy local para evitar CORS con la NASA JPL
+const JPL_BASE = '/api/jpl-proxy'                            // ruta del proxy local para evitar CORS con la NASA JPL
 const CACHE_TTL = 1000 * 60 * 60                              // tiempo de vida del caché: 1 hora en milisegundos
 const MARS_FALLBACK_SOLS = [1000, 500, 1500, 100, 200, 800, 1200, 50]  // sols alternativos si el sol pedido no tiene fotos
 

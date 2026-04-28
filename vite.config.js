@@ -5,10 +5,10 @@ export default defineConfig({
   plugins: [react()],  // activa soporte para JSX y React Fast Refresh
   server: {
     proxy: {
-      '/jpl-proxy': {                           // intercepta cualquier petición que empiece con /jpl-proxy
-        target: 'https://mars.nasa.gov',        // redirige esas peticiones al servidor real de la NASA
+      '/api/jpl-proxy': {                       // intercepta peticiones al proxy local (misma ruta que la función Vercel)
+        target: 'https://mars.nasa.gov',        // redirige al servidor real de la NASA
         changeOrigin: true,                     // cambia el header Origin para evitar bloqueos CORS
-        rewrite: path => path.replace(/^\/jpl-proxy/, ''),  // elimina el prefijo /jpl-proxy de la URL antes de enviarla
+        rewrite: path => path.replace(/^\/api\/jpl-proxy/, '/rss/api'),  // reescribe al endpoint correcto
       },
     },
   },

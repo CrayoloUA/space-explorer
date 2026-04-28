@@ -7,7 +7,10 @@ export default async function handler(req, res) {
 
   try {
     const upstream = await fetch(target.toString(), {
-      headers: { 'Accept': 'application/json' },
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Space-Explorer/1.0 (+https://github.com)'
+      },
     })
     const data = await upstream.json()
     res.setHeader('Access-Control-Allow-Origin', '*')
