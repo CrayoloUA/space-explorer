@@ -4,8 +4,8 @@ import axios from 'axios'                      // librería para hacer peticione
 // lee la clave del archivo .env.local (VITE_NASA_API_KEY=tu_clave); si no existe usa DEMO_KEY
 const API_KEY = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY'
 const BASE_URL = 'https://api.nasa.gov'                       // URL base de la NASA API
-const CACHE_TTL = 1000 * 60 * 60                              // tiempo de vida del caché: 1 hora en milisegundos
 const JPL_BASE = '/jpl-proxy/rss/api'                         // ruta del proxy local para evitar CORS con la NASA JPL
+const CACHE_TTL = 1000 * 60 * 60                              // tiempo de vida del caché: 1 hora en milisegundos
 const MARS_FALLBACK_SOLS = [1000, 500, 1500, 100, 200, 800, 1200, 50]  // sols alternativos si el sol pedido no tiene fotos
 
 // devuelve localStorage si está disponible, o null si no (ej. en SSR o modo privado bloqueado)
@@ -46,6 +46,20 @@ function extractApiError(err) {
   )
 }
 
+// reintenta una función async hasta `times` veces con espera entre intentos; omite reintento en errores 4xx (cliente)
+async function withRetry(fn, times = 3, delayMs = 1500) {
+  let lastErr
+  for (let i = 0; i < times; i++) {
+    try { return await fn() } catch (err) {
+      lastErr = err
+      const status = err.response?.status
+      if (status && status >= 400 && status < 500) throw err  // errores de cliente no se reintentan
+      if (i < times - 1) await new Promise(r => setTimeout(r, delayMs * (i + 1)))  // espera 1.5s, 3s...
+    }
+  }
+  throw lastErr
+}
+
 // hook que descarga una galería aleatoria de N imágenes APOD de la NASA
 export function useAPODGallery(count = 9) {
   const [data, setData] = useState([])      // lista de imágenes descargadas
@@ -65,9 +79,9 @@ export function useAPODGallery(count = 9) {
 
       if (!result) {  // si no hay caché válido, hace la petición a la API
         try {
-          const res = await axios.get(`${BASE_URL}/planetary/apod`, {
+          const res = await withRetry(() => axios.get(`${BASE_URL}/planetary/apod`, {
             params: { api_key: API_KEY, count }  // parámetros: clave API y cantidad de imágenes
-          })
+          }))
           result = res.data.sort((a, b) => new Date(b.date) - new Date(a.date))  // ordena de más reciente a más antiguo
           setCache(cacheKey, result)  // guarda en caché para no repetir la petición
         } catch (err) {
@@ -132,7 +146,7 @@ export function useMarsRover(page = 1, sol = 1000) {
           return
         }
         try {
-          const photos = await fetchJPLPhotos(s, page)  // intenta descargar fotos del sol actual
+          const photos = await withRetry(() => fetchJPLPhotos(s, page))  // usa el proxy JPL para evitar CORS
           if (photos.length > 0) {            // si encontró fotos, las guarda y termina
             setCache(cacheKey, photos)
             if (!cancelled) { setData(photos); setResolvedSol(s); setLoading(false) }
@@ -145,7 +159,6 @@ export function useMarsRover(page = 1, sol = 1000) {
         }
       }
 
-      // si ningún sol devolvió fotos, reporta el error
       if (!cancelled) {
         setData([])
         setError(localError || 'No se encontraron fotos para ningún sol disponible.')
@@ -180,9 +193,9 @@ export function useNeoFeed() {
       if (!result) {
         try {
           const today = new Date().toISOString().split('T')[0]  // fecha de hoy en formato YYYY-MM-DD
-          const res = await axios.get(`${BASE_URL}/neo/rest/v1/feed`, {
+          const res = await withRetry(() => axios.get(`${BASE_URL}/neo/rest/v1/feed`, {
             params: { api_key: API_KEY, start_date: today, end_date: today }  // pide asteroides solo de hoy
-          })
+          }))
           const items = res.data.near_earth_objects?.[today] || []  // extrae el array de asteroides de hoy
           result = items.slice(0, 6).map(item => ({  // toma máximo 6 asteroides y los normaliza
             id: item.id,
