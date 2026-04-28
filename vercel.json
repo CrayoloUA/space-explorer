@@ -1,11 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/jpl-proxy/:path*",
-      "destination": "https://mars.nasa.gov/:path*"
+      "source": "/jpl-proxy/rss/api",
+      "destination": "/api/jpl-proxy"
     },
     {
-      "source": "/((?!jpl-proxy).*)",
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ]
