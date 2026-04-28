@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'  // hooks de React 
 import PlanetScene from './components/PlanetScene'              // escena 3D del hero
 import APODCard from './components/APODCard'                    // tarjeta de imagen APOD
 import APODModal from './components/APODModal'                  // modal de detalle APOD
-import MarsGallery from './components/MarsGallery'              // galería de fotos de Marte
+import EarthGallery from './components/EarthGallery'            // galería EPIC de la Tierra
 import { useAPODGallery, useNeoFeed } from './hooks/useNASA'    // hooks de datos NASA
 
 // hook que anima un número desde 0 hasta `target` en `duration` ms con easing cúbico
@@ -202,10 +202,10 @@ function APODSection({ language, favorites, toggleFavorite }) {
 
   const t = {
     es: {
-      badge: 'NASA · APOD API', title: 'Astronomy Picture of the Day', subtitle: 'Imágenes reales del universo seleccionadas por la NASA, con curaduría diaria y una experiencia más inmersiva.', refresh: '🔄 Nueva selección', search: 'Buscar por título o descripción...', lost: 'Señal perdida', retry: '🔄 Reintentar', noResults: 'No se encontraron resultados para', favorites: 'Favoritos', all: 'Todo', images: 'Imágenes', videos: 'Videos', heroCard1: 'Galería curada con contenido astronómico real.', heroCard2: 'Explora Marte y guarda tus hallazgos favoritos.'
+      badge: 'NASA · APOD API', title: 'Astronomy Picture of the Day', subtitle: 'Imágenes reales del universo seleccionadas por la NASA, con curaduría diaria y una experiencia más inmersiva.', refresh: '🔄 Nueva selección', search: 'Buscar por título o descripción...', lost: 'Señal perdida', retry: '🔄 Reintentar', noResults: 'No se encontraron resultados para', favorites: 'Favoritos', all: 'Todo', images: 'Imágenes', videos: 'Videos', heroCard1: 'Galería curada con contenido astronómico real.', heroCard2: 'Observa la Tierra desde el espacio con la cámara EPIC de la NASA.'
     },
     en: {
-      badge: 'NASA · APOD API', title: 'Astronomy Picture of the Day', subtitle: 'Real NASA-selected images of the universe, with daily curation and a more immersive experience.', refresh: '🔄 New selection', search: 'Search by title or description...', lost: 'Signal lost', retry: '🔄 Retry', noResults: 'No results found for', favorites: 'Favorites', all: 'All', images: 'Images', videos: 'Videos', heroCard1: 'Curated gallery with real astronomical content.', heroCard2: 'Explore Mars and save your favorite discoveries.'
+      badge: 'NASA · APOD API', title: 'Astronomy Picture of the Day', subtitle: 'Real NASA-selected images of the universe, with daily curation and a more immersive experience.', refresh: '🔄 New selection', search: 'Search by title or description...', lost: 'Signal lost', retry: '🔄 Retry', noResults: 'No results found for', favorites: 'Favorites', all: 'All', images: 'Images', videos: 'Videos', heroCard1: 'Curated gallery with real astronomical content.', heroCard2: 'Watch Earth from space with NASA\'s EPIC camera.'
     }
   }[language]
 
@@ -308,7 +308,7 @@ function FullscreenButton({ language }) {
 
 // componente raíz de la aplicación: maneja tabs, idioma y favoritos
 export default function App() {
-  const [activeTab, setActiveTab] = useState('apod')  // tab activo: 'apod' o 'mars'
+  const [activeTab, setActiveTab] = useState('apod')  // tab activo: 'apod' o 'earth'
   const [language, setLanguage] = useState('es')       // idioma activo: 'es' o 'en'
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem('space_favorites') || '[]') } catch { return [] }  // carga favoritos del localStorage al iniciar
@@ -325,8 +325,8 @@ export default function App() {
   }
 
   const t = {
-    es: { hero: 'Explora el universo con imágenes reales de la NASA, una escena 3D más viva y una experiencia visual más cinematográfica.', cta: 'Explorar el universo →', scroll: 'SCROLL', mars: '🔴 Marte', apod: '🌌 APOD Gallery', pill1: 'Visual inmersivo', pill2: 'Datos reales NASA', pill3: 'Exploración interactiva' },
-    en: { hero: 'Explore the universe with real NASA images, a livelier 3D scene, and a more cinematic visual experience.', cta: 'Explore the universe →', scroll: 'SCROLL', mars: '🔴 Mars', apod: '🌌 APOD Gallery', pill1: 'Immersive visuals', pill2: 'Real NASA data', pill3: 'Interactive exploration' },
+    es: { hero: 'Explora el universo con imágenes reales de la NASA, una escena 3D más viva y una experiencia visual más cinematográfica.', cta: 'Explorar el universo →', scroll: 'SCROLL', earth: '🌍 Tierra', apod: '🌌 APOD Gallery', pill1: 'Visual inmersivo', pill2: 'Datos reales NASA', pill3: 'Exploración interactiva' },
+    en: { hero: 'Explore the universe with real NASA images, a livelier 3D scene, and a more cinematic visual experience.', cta: 'Explore the universe →', scroll: 'SCROLL', earth: '🌍 Earth', apod: '🌌 APOD Gallery', pill1: 'Immersive visuals', pill2: 'Real NASA data', pill3: 'Interactive exploration' },
   }[language]
 
   return (
@@ -365,7 +365,7 @@ export default function App() {
           {/* botón para cambiar entre ES y EN */}
           <button onClick={() => setLanguage(l => l === 'es' ? 'en' : 'es')} className="tab-btn" style={{ minWidth: 52 }}>{language.toUpperCase()}</button>
           {/* tabs de APOD y Marte */}
-          {[{ id: 'apod', label: t.apod }, { id: 'mars', label: t.mars }].map(tab => (
+          {[{ id: 'apod', label: t.apod }, { id: 'earth', label: t.earth }].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}>{tab.label}</button>
           ))}
         </div>
@@ -373,7 +373,7 @@ export default function App() {
 
       {/* contenido principal: muestra APOD o Marte según el tab activo */}
       <main>
-        {activeTab === 'apod' ? <APODSection language={language} favorites={favorites} toggleFavorite={toggleFavorite} /> : <div className="section-shell"><MarsGallery language={language} /></div>}
+        {activeTab === 'apod' ? <APODSection language={language} favorites={favorites} toggleFavorite={toggleFavorite} /> : <div className="section-shell"><EarthGallery language={language} /></div>}
       </main>
 
       {/* pie de página con créditos y enlace a la NASA */}

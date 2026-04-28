@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react'  // hooks de React para estado y efectos secundarios
-import axios from 'axios'                      // librería para hacer peticiones HTTP
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 
-// lee la clave del archivo .env.local (VITE_NASA_API_KEY=tu_clave); si no existe usa DEMO_KEY
 const API_KEY = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY'
-const BASE_URL = 'https://api.nasa.gov'                       // URL base de la NASA API
-const JPL_BASE = '/api/jpl-proxy'                            // ruta del proxy local para evitar CORS con la NASA JPL
-const CACHE_TTL = 1000 * 60 * 60                              // tiempo de vida del caché: 1 hora en milisegundos
-const MARS_FALLBACK_SOLS = [1000, 500, 1500, 100, 200, 800, 1200, 50]  // sols alternativos si el sol pedido no tiene fotos
+const BASE_URL = 'https://api.nasa.gov'
+const CACHE_TTL = 1000 * 60 * 60
 
-// devuelve localStorage si está disponible, o null si no (ej. en SSR o modo privado bloqueado)
 function safeStorage() {
   try {
     if (typeof window !== 'undefined' && window.localStorage) return window.localStorage
@@ -16,169 +12,51 @@ function safeStorage() {
   return null
 }
 
-// lee un valor del caché; lo descarta si expiró según CACHE_TTL
 function getCache(key) {
   const storage = safeStorage()
-  if (!storage) return null           // no hay almacenamiento disponible
+  if (!storage) return null
   try {
-    const raw = storage.getItem(key)  // obtiene el string guardado
-    if (!raw) return null             // no existe esa clave
-    const { data, ts } = JSON.parse(raw)                                         // desestructura datos y timestamp
-    if (Date.now() - ts > CACHE_TTL) { storage.removeItem(key); return null }    // expiró: borra y retorna null
-    return data                       // devuelve los datos si aún son válidos
+    const raw = storage.getItem(key)
+    if (!raw) return null
+    const { data, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL) { storage.removeItem(key); return null }
+    return data
   } catch { return null }
 }
 
-// guarda un valor en el caché junto con el timestamp actual
 function setCache(key, data) {
   const storage = safeStorage()
-  if (!storage) return  // no hay dónde guardar, sale sin hacer nada
-  try { storage.setItem(key, JSON.stringify({ data, ts: Date.now() })) } catch {}  // serializa y guarda
+  if (!storage) return
+  try { storage.setItem(key, JSON.stringify({ data, ts: Date.now() })) } catch {}
 }
 
-// extrae el mensaje de error más descriptivo de una respuesta de axios
 function extractApiError(err) {
   return (
-    err.response?.data?.error?.message ||  // error con estructura NASA estándar
-    err.response?.data?.msg ||             // mensaje corto alternativo
-    err.response?.data?.message ||         // otro formato de mensaje
-    err.message                            // mensaje genérico del error de JS
+    err.response?.data?.error?.message ||
+    err.response?.data?.msg ||
+    err.response?.data?.message ||
+    err.message
   )
 }
 
-// reintenta una función async hasta `times` veces con espera entre intentos; omite reintento en errores 4xx (cliente)
 async function withRetry(fn, times = 3, delayMs = 1500) {
   let lastErr
   for (let i = 0; i < times; i++) {
     try { return await fn() } catch (err) {
       lastErr = err
       const status = err.response?.status
-      if (status && status >= 400 && status < 500) throw err  // errores de cliente no se reintentan
-      if (i < times - 1) await new Promise(r => setTimeout(r, delayMs * (i + 1)))  // espera 1.5s, 3s...
+      if (status && status >= 400 && status < 500) throw err
+      if (i < times - 1) await new Promise(r => setTimeout(r, delayMs * (i + 1)))
     }
   }
   throw lastErr
 }
 
-// hook que descarga una galería aleatoria de N imágenes APOD de la NASA
 export function useAPODGallery(count = 9) {
-  const [data, setData] = useState([])      // lista de imágenes descargadas
-  const [loading, setLoading] = useState(true)  // indica si se está cargando
-  const [error, setError] = useState(null)  // mensaje de error si falla
-  const [tick, setTick] = useState(0)       // contador para forzar recarga cuando el usuario pulsa "refetch"
-
-  useEffect(() => {
-    let cancelled = false  // bandera para evitar actualizar estado si el componente se desmontó
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-      const cacheKey = `apod_gallery_${count}`  // clave única de caché según la cantidad pedida
-      let localError = null
-      let result = getCache(cacheKey)            // intenta leer del caché primero
-
-      if (!result) {  // si no hay caché válido, hace la petición a la API
-        try {
-          const res = await withRetry(() => axios.get(`${BASE_URL}/planetary/apod`, {
-            params: { api_key: API_KEY, count }  // parámetros: clave API y cantidad de imágenes
-          }))
-          result = res.data.sort((a, b) => new Date(b.date) - new Date(a.date))  // ordena de más reciente a más antiguo
-          setCache(cacheKey, result)  // guarda en caché para no repetir la petición
-        } catch (err) {
-          localError = extractApiError(err)  // captura el mensaje de error legible
-        }
-      }
-
-      if (!cancelled) {          // solo actualiza el estado si el componente sigue montado
-        setData(result || [])    // guarda las imágenes o array vacío si falló
-        setError(localError)     // guarda el error si lo hubo
-        setLoading(false)        // termina la carga
-      }
-    }
-
-    load()
-    return () => { cancelled = true }  // cleanup: marca como cancelado si el efecto se limpia
-  }, [count, tick])  // vuelve a ejecutar si cambia la cantidad o si el usuario pide recarga
-
-  return { data, loading, error, refetch: () => setTick(t => t + 1) }  // expone datos y función de recarga
-}
-
-// convierte la estructura de imagen de la API JPL al formato que usa el componente
-function normalizeJPLPhoto(img) {
-  return {
-    id: img.imageid,  // ID único de la foto
-    img_src: img.image_files?.medium || img.image_files?.full || img.image_files?.large || img.image_files?.small,  // elige la mejor resolución disponible
-    camera: { full_name: img.camera?.instrument || img.camera?.filter_name || 'Camera' },  // nombre de la cámara o valor por defecto
-    earth_date: img.date_taken_utc?.slice(0, 10) || img.date_received?.slice(0, 10) || '',  // fecha en formato YYYY-MM-DD
-  }
-}
-
-// hace la petición a la API JPL de Marte para un sol y página dados
-async function fetchJPLPhotos(sol, page) {
-  const res = await axios.get(JPL_BASE, {
-    params: { feed: 'raw_images', category: 'mars2020', feedtype: 'json', num: 25, page, sol }  // solicita 25 fotos crudas del rover Perseverance
-  })
-  return (res.data.images || []).map(normalizeJPLPhoto).filter(p => p.img_src)  // normaliza y filtra las que tienen URL de imagen
-}
-
-// hook que descarga fotos del rover Perseverance en Marte para un sol y página dados
-export function useMarsRover(page = 1, sol = 1000) {
-  const [data, setData] = useState([])           // lista de fotos de Marte
-  const [loading, setLoading] = useState(true)   // estado de carga
-  const [error, setError] = useState(null)       // mensaje de error
-  const [resolvedSol, setResolvedSol] = useState(sol)  // el sol que finalmente devolvió fotos (puede diferir del pedido)
-
-  useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      let localError = null
-
-      const solsToTry = [sol, ...MARS_FALLBACK_SOLS.filter(s => s !== sol)]  // lista de sols a intentar: primero el pedido, luego los fallbacks
-
-      for (const s of solsToTry) {  // itera cada sol hasta encontrar uno con fotos
-        const cacheKey = `jpl_mars_sol${s}_p${page}`  // clave de caché por sol y página
-        const cached = getCache(cacheKey)
-        if (cached?.length > 0) {  // si hay caché con fotos, lo usa directamente
-          if (!cancelled) { setData(cached); setResolvedSol(s); setLoading(false) }
-          return
-        }
-        try {
-          const photos = await withRetry(() => fetchJPLPhotos(s, page))  // usa el proxy JPL para evitar CORS
-          if (photos.length > 0) {            // si encontró fotos, las guarda y termina
-            setCache(cacheKey, photos)
-            if (!cancelled) { setData(photos); setResolvedSol(s); setLoading(false) }
-            return
-          }
-        } catch (err) {
-          localError = extractApiError(err)
-          const status = err.response?.status
-          if (status === 429 || status === 403) break  // si hay límite de tasa o acceso denegado, deja de intentar
-        }
-      }
-
-      if (!cancelled) {
-        setData([])
-        setError(localError || 'No se encontraron fotos para ningún sol disponible.')
-        setLoading(false)
-      }
-    }
-
-    load()
-    return () => { cancelled = true }  // cleanup
-  }, [page, sol])  // vuelve a cargar si cambia la página o el sol
-
-  return { data, loading, error, resolvedSol }  // expone datos y el sol que efectivamente se usó
-}
-
-// hook que descarga la lista de asteroides cercanos a la Tierra del día de hoy
-export function useNeoFeed() {
-  const [data, setData] = useState([])           // lista de asteroides
-  const [loading, setLoading] = useState(true)   // estado de carga
-  const [error, setError] = useState(null)       // mensaje de error
-  const [tick, setTick] = useState(0)            // contador para forzar recarga
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -186,28 +64,17 @@ export function useNeoFeed() {
     async function load() {
       setLoading(true)
       setError(null)
-      const cacheKey = 'neo_feed_today'  // clave fija porque siempre pide el día actual
+      const cacheKey = `apod_gallery_${count}`
       let localError = null
-      let result = getCache(cacheKey)    // intenta usar caché antes de ir a la API
+      let result = getCache(cacheKey)
 
       if (!result) {
         try {
-          const today = new Date().toISOString().split('T')[0]  // fecha de hoy en formato YYYY-MM-DD
-          const res = await withRetry(() => axios.get(`${BASE_URL}/neo/rest/v1/feed`, {
-            params: { api_key: API_KEY, start_date: today, end_date: today }  // pide asteroides solo de hoy
+          const res = await withRetry(() => axios.get(`${BASE_URL}/planetary/apod`, {
+            params: { api_key: API_KEY, count }
           }))
-          const items = res.data.near_earth_objects?.[today] || []  // extrae el array de asteroides de hoy
-          result = items.slice(0, 6).map(item => ({  // toma máximo 6 asteroides y los normaliza
-            id: item.id,
-            name: item.name,
-            hazardous: item.is_potentially_hazardous_asteroid,          // si es potencialmente peligroso
-            magnitude: item.absolute_magnitude_h,                       // magnitud absoluta (brillo)
-            diameterMin: item.estimated_diameter.kilometers.estimated_diameter_min,  // diámetro mínimo estimado
-            diameterMax: item.estimated_diameter.kilometers.estimated_diameter_max,  // diámetro máximo estimado
-            velocity: item.close_approach_data?.[0]?.relative_velocity?.kilometers_per_hour,  // velocidad relativa en km/h
-            missDistance: item.close_approach_data?.[0]?.miss_distance?.kilometers,           // distancia mínima de paso en km
-          }))
-          setCache(cacheKey, result)  // guarda en caché
+          result = res.data.sort((a, b) => new Date(b.date) - new Date(a.date))
+          setCache(cacheKey, result)
         } catch (err) {
           localError = extractApiError(err)
         }
@@ -221,8 +88,114 @@ export function useNeoFeed() {
     }
 
     load()
-    return () => { cancelled = true }  // cleanup
-  }, [tick])  // vuelve a ejecutar solo si el usuario pide recarga
+    return () => { cancelled = true }
+  }, [count, tick])
 
-  return { data, loading, error, refetch: () => setTick(t => t + 1) }  // expone datos y función de recarga
+  return { data, loading, error, refetch: () => setTick(t => t + 1) }
+}
+
+export function useEpicImages() {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      const cacheKey = 'epic_natural_latest'
+      let localError = null
+      let result = getCache(cacheKey)
+
+      if (!result) {
+        try {
+          // epic.gsfc.nasa.gov es el servidor directo de EPIC, sin API key ni redirecciones
+          const res = await withRetry(() => axios.get('https://epic.gsfc.nasa.gov/api/natural'))
+          result = res.data.slice(0, 12).map(img => {
+            const [datePart] = img.date.split(' ')
+            const [year, month, day] = datePart.split('-')
+            return {
+              id: img.identifier,
+              image: img.image,
+              caption: img.caption,
+              date: datePart,
+              thumbUrl: `https://epic.gsfc.nasa.gov/archive/natural/${year}/${month}/${day}/thumbs/${img.image}.jpg`,
+              fullUrl: `https://epic.gsfc.nasa.gov/archive/natural/${year}/${month}/${day}/png/${img.image}.png`,
+              lat: img.centroid_coordinates?.lat?.toFixed(2),
+              lon: img.centroid_coordinates?.lon?.toFixed(2),
+            }
+          })
+          setCache(cacheKey, result)
+        } catch (err) {
+          localError = extractApiError(err)
+        }
+      }
+
+      if (!cancelled) {
+        setData(result || [])
+        setError(localError)
+        setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  return { data, loading, error }
+}
+
+export function useNeoFeed() {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      const cacheKey = 'neo_feed_today'
+      let localError = null
+      let result = getCache(cacheKey)
+
+      if (!result) {
+        try {
+          const today = new Date().toISOString().split('T')[0]
+          const res = await withRetry(() => axios.get(`${BASE_URL}/neo/rest/v1/feed`, {
+            params: { api_key: API_KEY, start_date: today, end_date: today }
+          }))
+          const items = res.data.near_earth_objects?.[today] || []
+          result = items.slice(0, 6).map(item => ({
+            id: item.id,
+            name: item.name,
+            hazardous: item.is_potentially_hazardous_asteroid,
+            magnitude: item.absolute_magnitude_h,
+            diameterMin: item.estimated_diameter.kilometers.estimated_diameter_min,
+            diameterMax: item.estimated_diameter.kilometers.estimated_diameter_max,
+            velocity: item.close_approach_data?.[0]?.relative_velocity?.kilometers_per_hour,
+            missDistance: item.close_approach_data?.[0]?.miss_distance?.kilometers,
+          }))
+          setCache(cacheKey, result)
+        } catch (err) {
+          localError = extractApiError(err)
+        }
+      }
+
+      if (!cancelled) {
+        setData(result || [])
+        setError(localError)
+        setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [tick])
+
+  return { data, loading, error, refetch: () => setTick(t => t + 1) }
 }
