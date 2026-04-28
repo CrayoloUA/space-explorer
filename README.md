@@ -1,38 +1,32 @@
 # Space Explorer
 
-Este proyecto es una aplicacion web construida con React y Vite que consume datos reales de la NASA. La idea era simple: mostrar informacion astronomica de manera visual, y de paso integrar un elemento 3D que no se sintiera pegado con cinta. El resultado fue un explorador espacial con galeria de imagenes, fotos del rover en Marte y un seguimiento de asteroides cercanos a la Tierra, todo con una escena 3D del planeta Tierra al fondo.
-
-Lo desarrollamos para el Parcial 2 de Desarrollo Web.
+Aplicacion web desarrollada con React y Vite que consume la NASA Open API para mostrar datos astronomicos reales. Incluye una escena 3D interactiva construida con Three.js, una galeria de imagenes del universo, fotos del rover marciano y seguimiento de asteroides cercanos a la Tierra en tiempo real.
 
 ---
 
-## Que hace la aplicacion
+## Descripcion general
 
-En pocas palabras: conectarse a la API de la NASA, traer datos reales y mostrarlos de forma organizada. Hay tres secciones principales:
-
-- **Galeria APOD** — imagenes astronomicas seleccionadas por la NASA cada dia, con buscador, filtros por tipo (imagen o video) y la opcion de guardar favoritos.
-- **Galeria de Marte** — fotos tomadas por el rover Perseverance directamente desde la superficie marciana, con paginacion.
-- **Asteroides cercanos** — una seccion que muestra los objetos cerca de la Tierra reportados por la NASA para el dia de hoy, con datos como velocidad, distancia y si son potencialmente peligrosos.
-
-Y al entrar a la pagina lo primero que se ve es una escena 3D: un planeta Tierra que rota, con una luna orbitando, nubes, atmosfera y un campo de estrellas. Todo construido con Three.js, sin librerias adicionales.
+Space Explorer es una Single Page Application (SPA) organizada en dos vistas principales accesibles desde una barra de navegacion fija: la galeria APOD y la galeria de Marte. La aplicacion maneja tres fuentes de datos distintas de la NASA, las almacena en cache local para no repetir peticiones innecesarias y presenta todo con estados de carga, error y vacio disenados explicitamente.
 
 ---
 
-## Tecnologias
+## Tecnologias utilizadas
 
-| Tecnologia | Para que la usamos |
-|---|---|
-| React 18 + Vite | Base del proyecto. React maneja la interfaz y el estado, Vite compila todo rapido y levanta el servidor de desarrollo |
-| Three.js | La escena 3D. Usamos la libreria directamente, sin wrappers, para tener control total sobre la animacion |
-| Axios | Para hacer las peticiones HTTP a la NASA API. Maneja errores de forma mas limpia que fetch nativo |
-| localStorage | Cache de respuestas y persistencia de favoritos entre sesiones |
-| ESLint | Para mantener el codigo ordenado durante el desarrollo |
+| Tecnologia | Version | Para que se usa |
+|---|---|---|
+| React | 18 | Framework de interfaz. Gestiona el estado, los componentes y el ciclo de vida de la aplicacion |
+| Vite | 6 | Bundler y servidor de desarrollo. Compila el proyecto y expone un servidor local rapido con HMR |
+| Three.js | 0.176 | Libreria de graficos 3D sobre WebGL. Se usa para construir la escena del planeta Tierra visible en el hero |
+| Axios | 1.9 | Cliente HTTP. Realiza todas las peticiones a la NASA API con manejo de errores estructurado |
+| ESLint | 9 | Linter de codigo. Detecta errores de sintaxis y patrones incorrectos en JavaScript y JSX |
 
 ---
 
-## La API: NASA Open APIs
+## API utilizada
 
-Usamos tres endpoints de https://api.nasa.gov/
+**NASA Open APIs** — https://api.nasa.gov/
+
+La aplicacion consume tres endpoints distintos de la NASA:
 
 ### APOD — Astronomy Picture of the Day
 
@@ -40,31 +34,31 @@ Usamos tres endpoints de https://api.nasa.gov/
 GET https://api.nasa.gov/planetary/apod?api_key=KEY&count=9
 ```
 
-Devuelve imagenes o videos del universo seleccionados diariamente por la NASA. Cada respuesta trae titulo, descripcion, URL de la imagen, version en alta resolucion y tipo de media. Pedimos 9 elementos aleatorios por carga.
+Devuelve un arreglo de objetos con imagen o video del dia seleccionados por astronomos de la NASA. Cada objeto incluye `title`, `explanation`, `url`, `hdurl`, `media_type` y `date`. La aplicacion solicita 9 elementos aleatorios cada vez que se refresca la galeria.
 
-### Mars Rover Photos
+### Mars Rover Photos — JPL
 
 ```
 GET https://mars.nasa.gov/rss/api?feed=raw_images&category=mars2020&feedtype=json&num=25&page=N&sol=N
 ```
 
-Fotos reales del rover Perseverance. El parametro `sol` es un dia marciano contado desde que el rover aterrizzo. El problema es que no todos los soles tienen fotos disponibles, entonces si el primero viene vacio la aplicacion prueba automaticamente con otros valores (`500, 1500, 100...`) hasta encontrar uno con datos. Este endpoint ademas requiere un proxy por CORS, que se explica mas abajo.
+Devuelve fotos tomadas por el rover Perseverance en Marte. El parametro `sol` representa un dia marciano contado desde el aterrizaje del rover. La aplicacion intenta multiples valores de sol en orden (`1000, 500, 1500, 100...`) hasta encontrar uno que tenga fotos disponibles, lo que evita errores silenciosos cuando un sol especifico no tiene datos. Este endpoint se accede a traves de un proxy local de Vite para evitar errores de CORS (ver seccion de configuracion).
 
-### NEO Feed — asteroides
+### NEO Feed — Near Earth Objects
 
 ```
 GET https://api.nasa.gov/neo/rest/v1/feed?api_key=KEY&start_date=HOY&end_date=HOY
 ```
 
-Lista de asteroides cercanos a la Tierra para la fecha actual. De cada uno extraemos nombre, si es potencialmente peligroso, diametro estimado, velocidad y distancia de aproximacion.
+Devuelve los asteroides cercanos a la Tierra reportados por la NASA para la fecha actual. Por cada asteroide se extrae nombre, si es potencialmente peligroso, magnitud absoluta, diametro estimado, velocidad relativa y distancia minima de aproximacion.
 
 ### API Key
 
-El proyecto tiene una clave personal en `src/hooks/useNASA.js`. Si quieres usar la tuya (el limite con clave registrada es 1000 peticiones por hora):
+Por defecto la aplicacion usa una clave personal hardcodeada en `src/hooks/useNASA.js`. Para mayor limite de peticiones (por defecto 1000 req/hora con clave registrada):
 
-1. Registrarse gratis en https://api.nasa.gov/
+1. Registrarse en https://api.nasa.gov/
 2. Abrir `src/hooks/useNASA.js`
-3. Cambiar el valor al inicio del archivo:
+3. Reemplazar el valor de `API_KEY` al inicio del archivo
 
 ```js
 const API_KEY = 'TU_API_KEY_AQUI'
@@ -72,85 +66,125 @@ const API_KEY = 'TU_API_KEY_AQUI'
 
 ---
 
-## Como esta organizado el codigo
+## Estructura del proyecto
 
 ```
 space-explorer/
-├── public/
+├── public/                        # Archivos estaticos servidos directamente
 ├── src/
 │   ├── components/
-│   │   ├── PlanetScene.jsx     # Toda la escena 3D: Tierra, luna, asteroides, estrellas
-│   │   ├── APODCard.jsx        # Tarjeta de cada imagen con boton de favorito
-│   │   ├── APODModal.jsx       # Modal que abre la imagen en HD con descripcion completa
-│   │   └── MarsGallery.jsx     # Galeria de Marte con paginacion y filtros de camara
+│   │   ├── PlanetScene.jsx        # Escena 3D completa: Tierra, luna, asteroides y estrellas
+│   │   ├── APODCard.jsx           # Tarjeta individual de imagen astronomica con accion de favorito
+│   │   ├── APODModal.jsx          # Modal de detalle con imagen HD y descripcion completa
+│   │   └── MarsGallery.jsx        # Galeria de fotos del rover con paginacion y filtros
 │   ├── hooks/
-│   │   └── useNASA.js          # Toda la logica de peticiones, cache y manejo de errores
-│   ├── App.jsx                 # Layout principal, navegacion, estado de favoritos e idioma
-│   ├── index.css               # Variables CSS globales (colores, espaciados, tipografia)
-│   └── main.jsx                # Punto de entrada, monta React en el div#root
-├── index.html
-├── vite.config.js              # Configuracion de Vite y proxy para la API de Marte
-└── package.json
+│   │   └── useNASA.js             # Custom hooks para APOD, Mars Rover y NEO Feed + sistema de cache
+│   ├── App.jsx                    # Componente raiz: layout, navegacion, estado global de favoritos
+│   ├── App.css                    # Estilos minimos del componente App
+│   ├── index.css                  # Design tokens CSS y estilos globales de la aplicacion
+│   └── main.jsx                   # Punto de entrada: monta React en el DOM
+├── index.html                     # HTML base que carga el bundle de Vite
+├── vite.config.js                 # Configuracion de Vite: plugin React y proxy para JPL/NASA
+├── package.json                   # Dependencias y scripts del proyecto
+└── eslint.config.js               # Reglas de ESLint para el proyecto
 ```
 
 ---
 
-## Como funciona por dentro
+## Como funciona cada parte
 
-### La escena 3D (PlanetScene.jsx)
+### Escena 3D — PlanetScene.jsx
 
-Usamos Three.js puro, sin ningun wrapper. La textura de la Tierra no es una imagen descargada sino que se genera con un `<canvas>` HTML cada vez que carga: se dibuja el oceano con un gradiente, encima los continentes como elipses, las capas de hielo polar y las nubes. Sobre eso se montan tres capas: el planeta, las nubes semi-transparentes y la atmosfera como un halo azul claro.
+Usa Three.js directamente (sin wrappers) para construir una escena con:
 
-La luna orbita usando `Math.cos` y `Math.sin` sobre el tiempo transcurrido, que es la forma mas directa de hacer una orbita circular. Los 26 asteroides flotan con movimiento ondulatorio. Y la camara sigue al mouse suavemente usando interpolacion: cada frame se mueve un 2.4% de la distancia que le falta para llegar al puntero, lo que da ese efecto de seguimiento con inercia.
+- Un planeta Tierra con textura de oceanos y continentes generada proceduralmente en un `<canvas>` HTML, mapeada sobre una esfera con geometria `SphereGeometry(2.15, 96, 96)` de alta resolucion
+- Una capa de nubes semi-transparentes sobre la Tierra con rotacion independiente
+- Una atmosfera con efecto de halo usando `MeshBasicMaterial` con `side: THREE.BackSide`
+- Una luna que orbita con `Math.cos` y `Math.sin` sobre el tiempo transcurrido
+- Un campo de 7500 estrellas generadas con `BufferGeometry` y posiciones aleatorias
+- 26 asteroides con geometria icosaedral que flotan y rotan alrededor de la escena
+- Interaccion con el mouse: la camara sigue suavemente al cursor usando interpolacion lineal por frame
 
-Todo el loop de animacion se limpia cuando el componente se desmonta. Eso es importante porque si no, el `requestAnimationFrame` sigue corriendo en memoria aunque la pagina haya cambiado.
+La animacion corre en un loop con `requestAnimationFrame` y se limpia correctamente cuando el componente se desmonta (cleanup del `useEffect`), lo que evita fugas de memoria.
 
-### Los hooks de datos (useNASA.js)
+### Custom Hooks — useNASA.js
 
-Los tres hooks (`useAPODGallery`, `useMarsRover`, `useNeoFeed`) siguen el mismo esquema: antes de hacer cualquier peticion HTTP revisan si ya hay datos guardados en `localStorage` que tengan menos de una hora. Si los hay, los usan directamente. Si no, hacen la peticion, guardan el resultado y lo muestran.
+Contiene tres hooks que siguen el mismo patron:
 
-Esto significa que si recargas la pagina dentro de la misma hora, la aplicacion no hace ninguna llamada a la API. Util para no gastar el limite de peticiones durante el desarrollo.
+**`useAPODGallery(count)`** — Pide imagenes a APOD, verifica primero el cache local con la clave `apod_gallery_N`. Si el cache existe y no ha expirado (1 hora), lo usa directamente sin hacer ninguna peticion HTTP. Si no, hace la peticion con Axios, ordena los resultados por fecha descendente y guarda en cache. Expone `{ data, loading, error, refetch }`. El metodo `refetch` incrementa un contador interno `tick` que el `useEffect` tiene como dependencia, forzando una nueva carga.
 
-El acceso a `localStorage` esta envuelto en un `try/catch` porque hay navegadores, especialmente en modo privado, que lanzan una excepcion cuando intentas usarlo. Si eso pasa la aplicacion simplemente no usa cache, pero tampoco se rompe.
+**`useMarsRover(page, sol)`** — Intenta cargar fotos del rover para un sol marciano especifico. Si ese sol no tiene fotos (la respuesta viene vacia), prueba automaticamente con valores de fallback definidos en `MARS_FALLBACK_SOLS`. Esto es necesario porque no todos los dias marcianos tienen imagenes disponibles publicamente. Cada combinacion de sol y pagina tiene su propia clave de cache.
 
-### Estado global (App.jsx)
+**`useNeoFeed()`** — Pide asteroides para la fecha actual del sistema. La clave de cache es fija (`neo_feed_today`) lo que significa que la cache se invalida al dia siguiente porque la fecha de la peticion cambia.
 
-`App.jsx` maneja tres cosas a nivel global: el tab activo (APOD o Marte), el idioma (espanol o ingles) y los favoritos. Los favoritos se inicializan leyendo `localStorage` una sola vez al montar el componente, y cada vez que el usuario agrega o quita uno se guarda inmediatamente.
+El sistema de cache usa una funcion `safeStorage()` que intenta acceder a `localStorage` dentro de un bloque `try/catch`. Esto es importante porque algunos navegadores en modo privado o en iframes con restricciones pueden lanzar una excepcion al intentar acceder a `localStorage`, y manejarlo asi evita que toda la aplicacion falle por esa razon.
 
-El idioma funciona pasando una prop `language` a cada componente. Adentro de cada uno hay un objeto `t` con los textos en ambos idiomas, y se elige segun el valor recibido. Sencillo y sin libreria de i18n.
+### Estado global — App.jsx
 
-### El proxy de Vite (vite.config.js)
+`App.jsx` maneja tres piezas de estado que afectan a multiples componentes:
 
-La API de fotos de Marte vive en `mars.nasa.gov`. El navegador bloquea peticiones a dominios distintos al de la aplicacion (esto se llama politica CORS) a menos que el servidor lo permita explicitamente, y ese dominio no lo hace.
+- `activeTab` — controla que vista se muestra (APOD Gallery o Mars)
+- `language` — alterna entre espanol e ingles. Cada componente recibe el idioma como prop y contiene sus propios textos en un objeto `t` con ambas claves
+- `favorites` — arreglo de objetos APOD guardados por el usuario. Se inicializa leyendo `localStorage` directamente en el estado inicial con una funcion de inicializacion lazy (`useState(() => ...)`), lo que garantiza que la lectura solo ocurre una vez al montar. Cada cambio en los favoritos se persiste inmediatamente en `localStorage`
 
-La solucion fue configurar un proxy en Vite: cuando el codigo hace una peticion a `/jpl-proxy/rss/api/...`, Vite la intercepta desde su servidor de desarrollo y la redirige a `https://mars.nasa.gov/rss/api/...`. Para el navegador la peticion nunca salio de `localhost`, entonces no hay bloqueo.
+### Sistema de design tokens — index.css
 
-Ojo: este proxy solo funciona con `npm run dev`. En produccion hay que configurar algo equivalente en la plataforma de despliegue.
+Todos los valores visuales de la aplicacion (colores, espaciados, radios, sombras, fuentes) estan definidos como variables CSS en `:root`. Esto significa que ningun componente tiene valores magicos hardcodeados: usar `var(--space-4)` en lugar de `1rem` directamente hace que el sistema sea coherente y modificable desde un solo lugar.
 
 ---
 
-## Como ejecutarlo
+## Como ejecutar el proyecto
 
 ```bash
-# Clonar
+# 1. Clonar el repositorio
 git clone https://github.com/CrayoloUA/space-explorer.git
 cd space-explorer
 
-# Instalar dependencias
+# 2. Instalar dependencias
 npm install
 
-# Correr en desarrollo
+# 3. Iniciar el servidor de desarrollo
 npm run dev
-# Abrir http://localhost:5173
+
+# 4. Abrir en el navegador
+# http://localhost:5173
 ```
 
-Una aclaracion: no se puede abrir el `index.html` directamente en el navegador. El archivo solo tiene un `<div id="root">` vacio y un script que apunta a JSX sin compilar. Vite es el que transforma todo eso a JavaScript que el navegador entiende. Sin el servidor de Vite corriendo, no funciona nada.
+### Por que es necesario npm run dev y no abrir el HTML directamente
+
+La aplicacion usa JSX (sintaxis de React que no entienden los navegadores) y modulos ES que se resuelven por nombre (`import React from 'react'`). Vite se encarga de transpilar JSX a JavaScript valido y de resolver esas importaciones desde `node_modules`. Abrir el `index.html` directamente en el navegador no funciona porque el archivo solo contiene un `<div id="root">` y un script que apunta al codigo fuente sin transpilar.
+
+Adicionalmente, el proxy configurado en `vite.config.js` para el endpoint de Marte solo funciona cuando el servidor de Vite esta corriendo. Sin ese proxy, las peticiones al dominio `mars.nasa.gov` fallarian por politica de CORS del navegador.
 
 ```bash
-# Para generar el build de produccion
+# Compilar para produccion
 npm run build
-# Los archivos listos para subir quedan en dist/
+
+# El resultado queda en la carpeta dist/
+# dist/ contiene HTML, CSS y JS ya minificados, listos para subir a un servidor estatico
 ```
+
+---
+
+## Configuracion del proxy (vite.config.js)
+
+```js
+server: {
+  proxy: {
+    '/jpl-proxy': {
+      target: 'https://mars.nasa.gov',
+      changeOrigin: true,
+      rewrite: path => path.replace(/^\/jpl-proxy/, ''),
+    },
+  },
+}
+```
+
+La API de imagenes del rover de Marte vive en `mars.nasa.gov`, un dominio distinto al de la aplicacion (`localhost:5173`). Los navegadores bloquean peticiones entre dominios distintos por la politica de Same-Origin (CORS) a menos que el servidor destino lo permita explicitamente, y `mars.nasa.gov` no incluye los headers necesarios para permitirlo desde `localhost`.
+
+El proxy de Vite soluciona esto: cuando la aplicacion hace una peticion a `/jpl-proxy/rss/api/...`, Vite la intercepta desde el servidor de desarrollo (que si tiene permiso para hablar con cualquier dominio), la redirige a `https://mars.nasa.gov/rss/api/...` y devuelve la respuesta al navegador. Para el navegador, la peticion nunca salio del mismo origen.
+
+Este proxy solo existe en desarrollo. En produccion es necesario configurar un proxy equivalente en el servidor o plataforma de despliegue (ver seccion de despliegue).
 
 ---
 
@@ -164,6 +198,6 @@ npm run build
 
 ---
 
-## Autores
+## Autor
 
 Desarrollado por **CrayoloUA** — Parcial 2, Desarrollo Web
