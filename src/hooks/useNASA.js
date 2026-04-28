@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'  // hooks de React para estado y efectos secundarios
 import axios from 'axios'                      // librería para hacer peticiones HTTP
 
-const API_KEY = 'W7eUA0oyUgxcbtbRVRd3dKKFC0DbrDBoyfP3QYV1'  // clave de acceso a la NASA API
+// lee la clave del archivo .env.local (VITE_NASA_API_KEY=tu_clave); si no existe usa DEMO_KEY
+const API_KEY = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY'
 const BASE_URL = 'https://api.nasa.gov'                       // URL base de la NASA API
 const CACHE_TTL = 1000 * 60 * 60                              // tiempo de vida del caché: 1 hora en milisegundos
 const JPL_BASE = '/jpl-proxy/rss/api'                         // ruta del proxy local para evitar CORS con la NASA JPL

@@ -242,10 +242,10 @@ function APODSection({ language, favorites, toggleFavorite }) {
             <span style={{ color: 'var(--color-star)', fontSize: 'var(--text-sm)' }}>⭐ {favorites.length} {t.favorites}</span>  {/* cantidad de favoritos */}
             <button onClick={refetch} className="tab-btn" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>{t.refresh}</button>  {/* recarga imágenes aleatorias */}
           </div>
-          {/* botones de filtro: Todo / Imágenes / Videos */}
+          {/* botones de filtro: Todo / Imágenes / Videos; la clase 'active' resalta el filtro activo */}
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             {['all', 'images', 'videos'].map(key => (
-              <button key={key} onClick={() => setFilter(key)} className={`tab-btn${filter === key ? ' active' : ''}`}>{t[key]}</button>  {/* resalta el filtro activo */}
+              <button key={key} onClick={() => setFilter(key)} className={`tab-btn${filter === key ? ' active' : ''}`}>{t[key]}</button>
             ))}
           </div>
         </div>
